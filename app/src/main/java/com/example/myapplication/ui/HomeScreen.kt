@@ -31,7 +31,8 @@ import com.example.myapplication.ui.theme.GreenPrimary
 
 @Composable
 fun HomeScreen(onExit: () -> Unit, modifier: Modifier = Modifier) {
-    val categories = listOf("Todas", "Trabajo", "Escuela", "Personal")
+    // para los botones de categorias
+    val categories = listOf("Todas", "Trabajo", "Escuela", "Personal", "finanzas")
 
     Column(
         modifier = modifier
