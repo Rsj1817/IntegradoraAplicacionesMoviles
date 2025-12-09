@@ -1,4 +1,4 @@
-package com.example.myapplication.ui
+package com.example.myapplication.ui.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -137,7 +138,7 @@ fun LoginScreen(
                 ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    androidx.compose.material3.IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Image(
                             painter = painterResource(id = android.R.drawable.ic_menu_view),
                             contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
