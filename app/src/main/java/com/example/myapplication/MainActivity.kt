@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("home") {
-                            HomeScreen()
+                            HomeScreen(onExit = { navController.popBackStack() })
                         }
                     }
                 }
