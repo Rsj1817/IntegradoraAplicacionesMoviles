@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.LoginScreen
+import com.example.myapplication.ui.HomeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,21 +22,28 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
+                val navController = rememberNavController()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen(
-                        onAccept = { _, _ -> },
+                    NavHost(
+                        navController = navController,
+                        startDestination = "login",
                         modifier = Modifier.padding(innerPadding)
-                    )
+                    ) {
+                        composable("login") {
+                            LoginScreen(
+                                onAccept = { email, password ->
+                                    if (email == "admin" && password == "admin123") {
+                                        navController.navigate("home")
+                                    }
+                                }
+                            )
+                        }
+                        composable("home") {
+                            HomeScreen()
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginPreview() {
-    MyApplicationTheme {
-        LoginScreen(onAccept = { _, _ -> })
     }
 }

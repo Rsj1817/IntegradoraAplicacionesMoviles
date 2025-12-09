@@ -42,8 +42,8 @@ fun LoginScreen(
     onAccept: (email: String, password: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var email by rememberSaveable { mutableStateOf("admin") }
-    var password by rememberSaveable { mutableStateOf("admin123") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     Column(
@@ -119,22 +119,15 @@ fun LoginScreen(
                     focusedBorderColor = GreenPrimary,
                     unfocusedBorderColor = GreenPrimary.copy(alpha = 0.3f),
                     cursorColor = GreenPrimary
-                ),
-                leadingIcon = {
-                    Image(
-                        painter = painterResource(id = android.R.drawable.ic_dialog_email),
-                        contentDescription = null
-                    )
-                }
+                )
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Contraseña") },
-                placeholder = { Text("INgresa tu contraseña") },
+                placeholder = { Text("Ingresa tu contraseña") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
