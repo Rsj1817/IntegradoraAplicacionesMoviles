@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.login.LoginScreen
 import com.example.myapplication.ui.home.HomeScreen
+import com.example.myapplication.ui.home.RecordingsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +41,14 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("home") {
                             HomeScreen(
-                                onExit = { navController.popBackStack() }
+                                onExit = { navController.popBackStack() },
+                                onProfileClick = { /* TODO: Navigate to profile screen */ },
+                                onRecordingsClick = { navController.navigate("recordings") }
+                            )
+                        }
+                        composable("recordings") {
+                            RecordingsScreen(
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
                     }
