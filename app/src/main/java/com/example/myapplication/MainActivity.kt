@@ -21,9 +21,7 @@ class MainActivity : ComponentActivity() {
             MyApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LoginScreen(
-                        onAccept = { _, _, _ -> },
-                        onCancel = {},
-                        onForgotPassword = {},
+                        onAccept = { _, _ -> },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -36,6 +34,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun LoginPreview() {
     MyApplicationTheme {
-        LoginScreen(onAccept = { _, _, _ -> }, onCancel = {}, onForgotPassword = {})
+        LoginScreen(onAccept = { _, _ -> })
     }
 }

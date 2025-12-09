@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,9 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -42,15 +39,12 @@ import com.example.myapplication.ui.theme.GreenPrimary
 
 @Composable
 fun LoginScreen(
-    onAccept: (email: String, password: String, remember: Boolean) -> Unit,
-    onCancel: () -> Unit,
-    onForgotPassword: () -> Unit,
+    onAccept: (email: String, password: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("admin") }
+    var password by rememberSaveable { mutableStateOf("admin123") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    var rememberMe by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -81,14 +75,14 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "FieldSurvey",
+                    text = "SnapRec",
                     style = MaterialTheme.typography.headlineMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Encuestas Rápidas con Audio",
+                    text = "Gestión de audios inteligentes",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.9f)
                 )
@@ -107,7 +101,7 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Accede a tu cuenta de encuestador",
+                text = "Ingresa para sincronizar tus notas",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
             )
@@ -117,8 +111,8 @@ fun LoginScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
-                placeholder = { Text("tu@email.com") },
+                label = { Text("Usuario") },
+                placeholder = { Text("Ingresa tu Usuario") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -140,7 +134,7 @@ fun LoginScreen(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Contraseña") },
-                placeholder = { Text("••••••••") },
+                placeholder = { Text("INgresa tu contraseña") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -159,30 +153,10 @@ fun LoginScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            RowWithSpaceBetween(
-                left = {
-                    androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = rememberMe, onCheckedChange = { rememberMe = it })
-                        Text(text = "Recordarme")
-                    }
-                },
-                right = {
-                    Button(
-                        onClick = onForgotPassword,
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = GreenPrimary)
-                    ) {
-                        Text("¿Olvidaste tu contraseña?")
-                    }
-                }
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { onAccept(email, password, rememberMe) },
+                onClick = { onAccept(email, password) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -191,34 +165,6 @@ fun LoginScreen(
             ) {
                 Text("Iniciar Sesión")
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Text("Cancelar")
-            }
         }
     }
 }
-
-@Composable
-private fun RowWithSpaceBetween(
-    left: @Composable () -> Unit,
-    right: @Composable () -> Unit,
-) {
-    androidx.compose.foundation.layout.Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        left()
-        right()
-    }
-}
-
