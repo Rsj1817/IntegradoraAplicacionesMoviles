@@ -47,6 +47,7 @@ fun HomeScreen(
     onExit: () -> Unit,
     onProfileClick: () -> Unit,
     onRecordingsClick: () -> Unit,
+    onNewRecordingClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -122,7 +123,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            HomeButton(icon = Icons.Default.Add, text = "Nueva Grabación", description = "Crear nueva nota", onClick = {})
+            HomeButton(icon = Icons.Default.Add, text = "Nueva Grabación", description = "Crear nueva nota", onClick = onNewRecordingClick)
             Spacer(modifier = Modifier.height(16.dp))
             HomeButton(icon = Icons.Default.Folder, text = "Mis Grabaciones", description = "Todas tus notas", onClick = onRecordingsClick)
             Spacer(modifier = Modifier.height(16.dp))

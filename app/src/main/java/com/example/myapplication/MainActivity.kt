@@ -16,6 +16,7 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.screens.LoginScreen
 import com.example.myapplication.ui.home.HomeScreen
 import com.example.myapplication.ui.home.RecordingsScreen
+import com.example.myapplication.ui.newrecording.NewRecordingScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,12 +44,19 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onExit = { navController.popBackStack() },
                                 onProfileClick = { /* TODO: Navigate to profile screen */ },
-                                onRecordingsClick = { navController.navigate("recordings") }
+                                onRecordingsClick = { navController.navigate("recordings") },
+                                onNewRecordingClick = { navController.navigate("new_recording") }
                             )
                         }
                         composable("recordings") {
                             RecordingsScreen(
                                 onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("new_recording") {
+                            NewRecordingScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onMoreOptionsClick = { /* TODO */ }
                             )
                         }
                     }
