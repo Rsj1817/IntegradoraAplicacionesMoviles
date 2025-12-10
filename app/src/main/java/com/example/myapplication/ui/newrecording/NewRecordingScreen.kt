@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -19,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +49,8 @@ fun NewRecordingScreen(
                     IconButton(onClick = onNavigateBack) {
                         Image(
                             painter = painterResource(id = R.drawable.flechasalida),
-                            contentDescription = "Atrás"
+                            contentDescription = "Atrás",
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },
@@ -53,7 +58,8 @@ fun NewRecordingScreen(
                     IconButton(onClick = onMoreOptionsClick) {
                         Image(
                             painter = painterResource(id = R.drawable.trespuntos),
-                            contentDescription = "Más opciones"
+                            contentDescription = "Más opciones",
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -80,13 +86,22 @@ fun NewRecordingScreen(
                 },
                 modifier = Modifier.size(120.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.microfono),
-                    contentDescription = "Grabar"
-                )
+                if (isRecording.value) {
+                    Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = "Detener grabación",
+                        modifier = Modifier.size(64.dp),
+                        tint = Color.Red
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.microfono),
+                        contentDescription = "Grabar"
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = if (isRecording.value) "Grabando..." else "Presiona para iniciar la grabación")
+            Text(text = if (isRecording.value) "Presione para terminar de grabar" else "Presiona para iniciar la grabación")
         }
     }
 }
