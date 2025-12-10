@@ -57,7 +57,8 @@ fun HomeScreen(
                     IconButton(onClick = onExit) {
                         Image(
                             painter = painterResource(id = R.drawable.salida),
-                            contentDescription = "Salir"
+                            contentDescription = "Salir",
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 },
