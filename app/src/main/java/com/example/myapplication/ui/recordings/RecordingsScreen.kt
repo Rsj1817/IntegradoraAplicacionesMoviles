@@ -47,6 +47,7 @@ import com.example.myapplication.data.RecordingMeta
 import android.app.Application
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import android.os.Build
 
 @Composable
 fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Unit, onOpenFavorites: () -> Unit, modifier: Modifier = Modifier) {
@@ -56,15 +57,26 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
     val app = context.applicationContext as Application
     val metaRepo = remember { RecordingMetadataRepository(app) }
     val metaMapState = remember { mutableStateOf<Map<String, RecordingMeta>>(emptyMap()) }
-    val recordings = remember { mutableStateOf(listOf<File>()) }
+    val recordings = remember { mutableStateOf<List<String>>(emptyList()) }
+    val serverWarning = remember { mutableStateOf("") }
+    val isEmulator = remember {
+        val fp = Build.FINGERPRINT.lowercase()
+        val prod = Build.PRODUCT.lowercase()
+        val model = Build.MODEL.lowercase()
+        fp.contains("generic") || fp.contains("unknown") ||
+                prod.contains("sdk") || prod.contains("emulator") ||
+                model.contains("emulator")
+    }
 
     LaunchedEffect(Unit) {
-        val dir = context.cacheDir
-        val files = dir.listFiles { f ->
-            f.isFile && f.name.startsWith("audio_") && f.name.endsWith(".mp4")
-        }?.sortedByDescending { it.lastModified() } ?: emptyList()
-        recordings.value = files
-        metaMapState.value = metaRepo.loadAll()
+        val data = metaRepo.loadAll()
+        metaMapState.value = data
+        recordings.value = data.keys.toList()
+        if (!isEmulator && data.isEmpty()) {
+            serverWarning.value = "Sin conexión al servidor: conecta el celular por USB y ejecuta 'adb reverse tcp:5000 tcp:5000', o configura la app para apuntar al IP de tu PC (por ejemplo http://192.168.x.x:5000)."
+        } else {
+            serverWarning.value = ""
+        }
     }
 
     Column(
@@ -96,6 +108,18 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (serverWarning.value.isNotBlank()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFFE0E0), RoundedCornerShape(12.dp))
+                    .padding(12.dp)
+            ) {
+                Text(text = serverWarning.value, color = Color(0xFF8B0000))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -116,8 +140,8 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val filtered = if (selected.value == "Todas") recordings.value else recordings.value.filter { f ->
-            metaMapState.value[f.name]?.category == selected.value
+        val filtered = if (selected.value == "Todas") recordings.value else recordings.value.filter { name ->
+            metaMapState.value[name]?.category == selected.value
         }
         if (filtered.isNotEmpty()) {
             LazyColumn(
@@ -125,12 +149,12 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(filtered.indices.toList()) { idx ->
-                    val file = filtered[idx]
+                    val name = filtered[idx]
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .clickable { onOpenRecording(file.name) },
+                            .clickable { onOpenRecording(name) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Image(
@@ -141,12 +165,10 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                         )
                         Spacer(modifier = Modifier.size(12.dp))
                         Column {
-                            val metaTitle = metaMapState.value[file.name]?.title
-                            Text(text = (metaTitle?.takeIf { it.isNotBlank() } ?: file.name), color = TealDark, fontWeight = FontWeight.SemiBold)
-                            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                            Text(text = sdf.format(file.lastModified()), color = TealMid)
-                            val cat = metaMapState.value[file.name]?.category
-                            val fav = metaMapState.value[file.name]?.favorite == true
+                            val metaTitle = metaMapState.value[name]?.title
+                            Text(text = (metaTitle?.takeIf { it.isNotBlank() } ?: name), color = TealDark, fontWeight = FontWeight.SemiBold)
+                            val cat = metaMapState.value[name]?.category
+                            val fav = metaMapState.value[name]?.favorite == true
                             val aux = listOfNotNull(cat?.takeIf { it.isNotBlank() }, if (fav) "★ Favorito" else null).joinToString(" • ")
                             if (aux.isNotBlank()) {
                                 Text(text = aux, color = TealMid)
