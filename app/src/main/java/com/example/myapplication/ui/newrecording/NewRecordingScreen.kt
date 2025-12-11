@@ -50,6 +50,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import android.app.Application
+import com.example.myapplication.data.RecordingMetadataRepository
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -65,6 +68,8 @@ fun NewRecordingScreen(
     val seconds by recordViewModel.timerSeconds.collectAsState()
     val isPaused by recordViewModel.isPaused.collectAsState()
     val recordAudioPermission = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val metaRepo = RecordingMetadataRepository(app)
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -173,7 +178,12 @@ fun NewRecordingScreen(
                     }
 
                     IconButton(
-                        onClick = { recordViewModel.stopRecording() },
+                        onClick = {
+                            val file = recordViewModel.stopRecording()
+                            file?.let {
+                                scope.launch { metaRepo.ensureExists(it.name) }
+                            }
+                        },
                         modifier = Modifier.size(100.dp)
                     ) {
                         Box(

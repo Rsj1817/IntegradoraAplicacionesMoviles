@@ -76,8 +76,12 @@ class RecordingMetadataRepository(private val app: Application) {
     suspend fun isFavorite(fileName: String): Boolean = getRemoteOrDefault(fileName).favorite
 
     suspend fun loadAll(): Map<String, RecordingMeta> {
-        val list = api.getRecordings()
-        return list.associate { it.fileName to toMeta(it) }
+        return try {
+            val list = api.getRecordings()
+            list.associate { it.fileName to toMeta(it) }
+        } catch (_: Exception) {
+            emptyMap()
+        }
     }
 
     suspend fun delete(fileName: String) {
@@ -89,9 +93,20 @@ class RecordingMetadataRepository(private val app: Application) {
     suspend fun getTranscript(fileName: String): String = getRemoteOrDefault(fileName).transcript
 
     suspend fun transcribe(fileName: String, file: File): String {
-        val body = RequestBody.create("audio/mp4".toMediaTypeOrNull(), file)
-        val part = MultipartBody.Part.createFormData("file", file.name, body)
-        val updated = api.transcribeRecording(fileName, part)
-        return updated.transcript
+        return try {
+            val body = RequestBody.create("audio/mp4".toMediaTypeOrNull(), file)
+            val part = MultipartBody.Part.createFormData("file", file.name, body)
+            val updated = api.transcribeRecording(fileName, part)
+            updated.transcript
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    suspend fun ensureExists(fileName: String) {
+        try {
+            api.createRecording(RecordingItem(fileName = fileName))
+        } catch (_: Exception) {
+        }
     }
 }
