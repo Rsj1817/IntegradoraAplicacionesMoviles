@@ -45,9 +45,11 @@ import java.util.Locale
 import com.example.myapplication.data.RecordingMetadataRepository
 import com.example.myapplication.data.RecordingMeta
 import android.app.Application
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 
 @Composable
-fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Unit, modifier: Modifier = Modifier) {
+fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Unit, onOpenFavorites: () -> Unit, modifier: Modifier = Modifier) {
     val categories = listOf("Todas", "Trabajo", "Escuela", "Personal")
     val selected = remember { mutableStateOf("Todas") }
     val context = LocalContext.current
@@ -143,6 +145,12 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                             Text(text = (metaTitle?.takeIf { it.isNotBlank() } ?: file.name), color = TealDark, fontWeight = FontWeight.SemiBold)
                             val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                             Text(text = sdf.format(file.lastModified()), color = TealMid)
+                            val cat = metaMapState.value[file.name]?.category
+                            val fav = metaMapState.value[file.name]?.favorite == true
+                            val aux = listOfNotNull(cat?.takeIf { it.isNotBlank() }, if (fav) "★ Favorito" else null).joinToString(" • ")
+                            if (aux.isNotBlank()) {
+                                Text(text = aux, color = TealMid)
+                            }
                         }
                     }
                 }

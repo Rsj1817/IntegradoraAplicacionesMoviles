@@ -4,6 +4,7 @@
 
     <!-- ===== PERMISOS ===== -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- (Opcional pero recomendado) -->
     <uses-feature
@@ -19,6 +20,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication"
+        android:usesCleartextTraffic="true"
         tools:targetApi="36">
 
         <!-- ===== MAIN ACTIVITY ===== -->

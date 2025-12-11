@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
@@ -46,6 +48,10 @@ import java.io.File
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.clickable
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +60,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
     val app = context.applicationContext as Application
     val vm: PlaybackViewModel = viewModel(factory = PlaybackViewModelFactory(app))
     val metaRepo = RecordingMetadataRepository(app)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     val files = remember { mutableStateOf(listOf<File>()) }
     LaunchedEffect(Unit) {
@@ -70,6 +77,18 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
         val idx = files.value.indexOfFirst { it.name == name }.coerceAtLeast(0)
         currentIndex.value = idx
     }
+    val favoriteState = remember { mutableStateOf(false) }
+    val transcriptState = remember { mutableStateOf("") }
+    LaunchedEffect(currentIndex.value) {
+        val f = files.value.getOrNull(currentIndex.value)
+        if (f != null) {
+            favoriteState.value = metaRepo.isFavorite(f.name)
+            transcriptState.value = metaRepo.getTranscript(f.name)
+        } else {
+            favoriteState.value = false
+            transcriptState.value = ""
+        }
+    }
 
     val isPlaying by vm.isPlaying.collectAsState()
     val durationMs by vm.durationMs.collectAsState()
@@ -77,13 +96,35 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
     val lastPrevClick = remember { mutableStateOf(0L) }
 
+    val currentName = files.value.getOrNull(currentIndex.value)?.name ?: ""
+    val titleState = remember { mutableStateOf(currentName) }
+    LaunchedEffect(currentName) {
+        if (currentName.isNotBlank()) {
+            val t = metaRepo.getTitle(currentName)
+            titleState.value = (t ?: currentName)
+        } else {
+            titleState.value = currentName
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().background(OffWhite).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        val headerTitle = titleStateOrNull(files.value.getOrNull(currentIndex.value)?.name ?: "", metaRepo)
-        Text(text = headerTitle, fontSize = 22.sp, color = TealDark)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(text = titleState.value, fontSize = 22.sp, color = TealDark)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = {
+                    val f = files.value.getOrNull(currentIndex.value) ?: return@IconButton
+                    val newFav = !favoriteState.value
+                    favoriteState.value = newFav
+                    scope.launch { metaRepo.setFavorite(f.name, newFav) }
+                }) {
+                    Icon(imageVector = if (favoriteState.value) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorito", tint = TealAccent)
+                }
+            }
+        }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(text = formatTime(positionMs), color = TealMid)
@@ -125,14 +166,11 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
         Spacer(modifier = Modifier.size(24.dp))
 
         // Campos de título, categoría y notas
-        val currentName = files.value.getOrNull(currentIndex.value)?.name ?: ""
-        val initialTitle = currentName.let { metaRepo.getTitle(it) } ?: currentName
-        val titleState = remember { mutableStateOf(initialTitle) }
         androidx.compose.material3.OutlinedTextField(
             value = titleState.value,
             onValueChange = {
                 titleState.value = it
-                if (currentName.isNotBlank()) metaRepo.setTitle(currentName, it)
+                if (currentName.isNotBlank()) scope.launch { metaRepo.setTitle(currentName, it) }
             },
             label = { Text("Título") },
             modifier = Modifier.fillMaxWidth()
@@ -143,15 +181,18 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
         val categories = listOf("Trabajo", "Escuela", "Personal")
         val expanded = remember { mutableStateOf(false) }
         val currentFile = files.value.getOrNull(currentIndex.value)
-        val initialCategory = currentFile?.let { metaRepo.getCategory(it.name) } ?: ""
-        val selected = remember { mutableStateOf(initialCategory) }
+        val selected = remember { mutableStateOf("") }
+        LaunchedEffect(currentIndex.value) {
+            val f = files.value.getOrNull(currentIndex.value)
+            selected.value = if (f != null) metaRepo.getCategory(f.name) ?: "" else ""
+        }
         androidx.compose.material3.ExposedDropdownMenuBox(expanded = expanded.value, onExpandedChange = { expanded.value = it }) {
             androidx.compose.material3.OutlinedTextField(
                 value = if (selected.value.isBlank()) "Selecciona categoría" else selected.value,
                 onValueChange = {},
                 label = { Text("Categoría") },
                 readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().menuAnchor().clickable { expanded.value = !expanded.value },
                 trailingIcon = {
                     IconButton(onClick = { expanded.value = !expanded.value }) {
                         Icon(
@@ -169,7 +210,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                         onClick = {
                             selected.value = cat
                             expanded.value = false
-                            currentFile?.let { metaRepo.setCategory(it.name, cat) }
+                            currentFile?.let { scope.launch { metaRepo.setCategory(it.name, cat) } }
                         }
                     )
                 }
@@ -178,40 +219,82 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
         Spacer(modifier = Modifier.size(12.dp))
 
-        val initialNotes = currentFile?.let { metaRepo.getNotes(it.name) } ?: ""
-        val notesState = remember { mutableStateOf(initialNotes) }
+        if (transcriptState.value.isNotBlank()) {
+            Text(text = "Transcripción", color = TealDark)
+            androidx.compose.material3.OutlinedTextField(
+                value = transcriptState.value,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth().size(160.dp)
+            )
+            Spacer(modifier = Modifier.size(12.dp))
+        }
+
+        val notesState = remember { mutableStateOf("") }
+        LaunchedEffect(currentIndex.value) {
+            val f = files.value.getOrNull(currentIndex.value)
+            if (f != null) {
+                titleState.value = metaRepo.getTitle(f.name) ?: f.name
+                notesState.value = metaRepo.getNotes(f.name) ?: ""
+            } else {
+                titleState.value = currentName
+                notesState.value = ""
+            }
+        }
         androidx.compose.material3.OutlinedTextField(
             value = notesState.value,
-            onValueChange = {
-                notesState.value = it
-                currentFile?.let { f -> metaRepo.setNotes(f.name, it) }
-            },
+                onValueChange = {
+                    notesState.value = it
+                    currentFile?.let { f -> scope.launch { metaRepo.setNotes(f.name, it) } }
+                },
             label = { Text("Notas adicionales") },
             modifier = Modifier.fillMaxWidth().size(160.dp)
         )
 
         Spacer(modifier = Modifier.size(16.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Button(
+                modifier = Modifier.weight(1f),
                 onClick = {
                     val f = files.value.getOrNull(currentIndex.value) ?: return@Button
-                    metaRepo.setTitle(f.name, titleState.value)
-                    metaRepo.setNotes(f.name, notesState.value)
-                    if (selected.value.isNotBlank()) metaRepo.setCategory(f.name, selected.value)
+                    scope.launch {
+                        metaRepo.setTitle(f.name, titleState.value)
+                        metaRepo.setNotes(f.name, notesState.value)
+                        if (selected.value.isNotBlank()) metaRepo.setCategory(f.name, selected.value)
+                    }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = TealDark, contentColor = OffWhite)
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TealDark, contentColor = OffWhite),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
             ) {
                 Text("Actualizar Datos")
             }
 
             Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    val f = files.value.getOrNull(currentIndex.value) ?: return@Button
+                    scope.launch {
+                        val txt = metaRepo.transcribe(f.name, f)
+                        transcriptState.value = txt
+                    }
+                },
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TealMid, contentColor = OffWhite),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+            ) {
+                Text("Transcribir")
+            }
+
+            Button(
+                modifier = Modifier.weight(1f),
                 onClick = {
                     val f = files.value.getOrNull(currentIndex.value) ?: return@Button
                     vm.release()
                     // delete file and metadata
                     try { f.delete() } catch (_: Exception) {}
-                    metaRepo.delete(f.name)
+                    scope.launch { metaRepo.delete(f.name) }
                     val newList = files.value.toMutableList().also { it.remove(f) }
                     files.value = newList
                     // move index or exit
@@ -221,9 +304,29 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                         currentIndex.value = newList.lastIndex
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = OffWhite)
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = OffWhite),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
             ) {
                 Text("Eliminar Audio")
+            }
+
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    val f = files.value.getOrNull(currentIndex.value) ?: return@Button
+                    scope.launch {
+                        metaRepo.setTitle(f.name, titleState.value)
+                        metaRepo.setNotes(f.name, notesState.value)
+                        if (selected.value.isNotBlank()) metaRepo.setCategory(f.name, selected.value)
+                    }
+                    onNavigateBack()
+                },
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TealAccent, contentColor = OffWhite),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+            ) {
+                Text("Guardar y Regresar")
             }
         }
     }
@@ -236,7 +339,4 @@ private fun formatTime(ms: Int): String {
     return String.format("%02d:%02d", m, s)
 }
 
-private fun titleStateOrNull(fileName: String, repo: com.example.myapplication.data.RecordingMetadataRepository): String {
-    val saved = repo.getTitle(fileName)
-    return if (saved.isNullOrBlank()) fileName else saved
-}
+ 
