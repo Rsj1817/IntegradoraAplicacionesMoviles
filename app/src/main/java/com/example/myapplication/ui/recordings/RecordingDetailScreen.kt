@@ -2,56 +2,38 @@ package com.example.myapplication.ui.recordings
 
 import android.app.Application
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.collectAsState
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.RecordingMetadataRepository
 import com.example.myapplication.ui.theme.OffWhite
 import com.example.myapplication.ui.theme.TealAccent
 import com.example.myapplication.ui.theme.TealDark
 import com.example.myapplication.ui.theme.TealMid
 import com.example.myapplication.viewmodel.PlaybackViewModel
 import com.example.myapplication.viewmodel.PlaybackViewModelFactory
-import com.example.myapplication.data.RecordingMetadataRepository
-import java.io.File
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.clickable
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +42,10 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
     val app = context.applicationContext as Application
     val vm: PlaybackViewModel = viewModel(factory = PlaybackViewModelFactory(app))
     val metaRepo = RecordingMetadataRepository(app)
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
+
+    // Estado de scroll para que si la pantalla es chica, se pueda bajar
+    val scrollState = rememberScrollState()
 
     val files = remember { mutableStateOf(listOf<File>()) }
     LaunchedEffect(Unit) {
@@ -108,12 +93,17 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(OffWhite).padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(OffWhite)
+            .padding(16.dp)
+            .verticalScroll(scrollState), // Habilitar scroll por si acaso
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
+        // --- HEADER ---
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = titleState.value, fontSize = 22.sp, color = TealDark)
+            Text(text = titleState.value, fontSize = 22.sp, color = TealDark, maxLines = 1)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = {
                     val f = files.value.getOrNull(currentIndex.value) ?: return@IconButton
@@ -126,6 +116,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             }
         }
 
+        // --- TIEMPOS ---
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(text = formatTime(positionMs), color = TealMid)
             Text(text = formatTime(durationMs), color = TealMid)
@@ -137,14 +128,13 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             colors = SliderDefaults.colors(thumbColor = TealAccent, activeTrackColor = TealMid)
         )
 
+        // --- CONTROLES DE REPRODUCCIÓN ---
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = {
                 val now = System.currentTimeMillis()
                 if (now - lastPrevClick.value < 300) {
-                    // doble click -> anterior
                     if (currentIndex.value > 0) currentIndex.value = currentIndex.value - 1
                 } else {
-                    // single -> reiniciar
                     vm.restart()
                 }
                 lastPrevClick.value = now
@@ -165,8 +155,8 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
         Spacer(modifier = Modifier.size(24.dp))
 
-        // Campos de título, categoría y notas
-        androidx.compose.material3.OutlinedTextField(
+        // --- FORMULARIO ---
+        OutlinedTextField(
             value = titleState.value,
             onValueChange = {
                 titleState.value = it
@@ -186,8 +176,9 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             val f = files.value.getOrNull(currentIndex.value)
             selected.value = if (f != null) metaRepo.getCategory(f.name) ?: "" else ""
         }
-        androidx.compose.material3.ExposedDropdownMenuBox(expanded = expanded.value, onExpandedChange = { expanded.value = it }) {
-            androidx.compose.material3.OutlinedTextField(
+
+        ExposedDropdownMenuBox(expanded = expanded.value, onExpandedChange = { expanded.value = it }) {
+            OutlinedTextField(
                 value = if (selected.value.isBlank()) "Selecciona categoría" else selected.value,
                 onValueChange = {},
                 label = { Text("Categoría") },
@@ -203,9 +194,9 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                     }
                 }
             )
-            androidx.compose.material3.DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
+            DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
                 categories.forEach { cat ->
-                    androidx.compose.material3.DropdownMenuItem(
+                    DropdownMenuItem(
                         text = { Text(cat) },
                         onClick = {
                             selected.value = cat
@@ -221,11 +212,11 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
         if (transcriptState.value.isNotBlank()) {
             Text(text = "Transcripción", color = TealDark)
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = transcriptState.value,
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier.fillMaxWidth().size(160.dp)
+                modifier = Modifier.fillMaxWidth().height(100.dp)
             )
             Spacer(modifier = Modifier.size(12.dp))
         }
@@ -241,19 +232,25 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                 notesState.value = ""
             }
         }
-        androidx.compose.material3.OutlinedTextField(
+        OutlinedTextField(
             value = notesState.value,
-                onValueChange = {
-                    notesState.value = it
-                    currentFile?.let { f -> scope.launch { metaRepo.setNotes(f.name, it) } }
-                },
+            onValueChange = {
+                notesState.value = it
+                currentFile?.let { f -> scope.launch { metaRepo.setNotes(f.name, it) } }
+            },
             label = { Text("Notas adicionales") },
-            modifier = Modifier.fillMaxWidth().size(160.dp)
+            modifier = Modifier.fillMaxWidth().height(100.dp)
         )
 
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(24.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        // --- BOTONES DE ACCIÓN (Corregidos para ser más chicos y caber bien) ---
+
+        // Fila 1: Actualizar y Transcribir
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
@@ -264,11 +261,11 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                         if (selected.value.isNotBlank()) metaRepo.setCategory(f.name, selected.value)
                     }
                 },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TealDark, contentColor = OffWhite),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(vertical = 4.dp) // Botón menos alto
             ) {
-                Text("Actualizar Datos")
+                Text("Actualizar", fontSize = 13.sp)
             }
 
             Button(
@@ -280,35 +277,41 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                         transcriptState.value = txt
                     }
                 },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TealMid, contentColor = OffWhite),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(vertical = 4.dp)
             ) {
-                Text("Transcribir")
+                Text("Transcribir", fontSize = 13.sp)
             }
+        }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Fila 2: Eliminar y Guardar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
                     val f = files.value.getOrNull(currentIndex.value) ?: return@Button
                     vm.release()
-                    // delete file and metadata
                     try { f.delete() } catch (_: Exception) {}
                     scope.launch { metaRepo.delete(f.name) }
                     val newList = files.value.toMutableList().also { it.remove(f) }
                     files.value = newList
-                    // move index or exit
                     if (newList.isEmpty()) {
                         onNavigateBack()
                     } else if (currentIndex.value >= newList.size) {
                         currentIndex.value = newList.lastIndex
                     }
                 },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = OffWhite),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(vertical = 4.dp)
             ) {
-                Text("Eliminar Audio")
+                Text("Eliminar", fontSize = 13.sp)
             }
 
             Button(
@@ -322,13 +325,15 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                     }
                     onNavigateBack()
                 },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TealAccent, contentColor = OffWhite),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(vertical = 4.dp)
             ) {
-                Text("Guardar y Regresar")
+                Text("Guardar", fontSize = 13.sp)
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp)) // Espacio extra abajo
     }
 }
 
@@ -338,5 +343,3 @@ private fun formatTime(ms: Int): String {
     val s = totalSeconds % 60
     return String.format("%02d:%02d", m, s)
 }
-
- 
