@@ -24,20 +24,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.R
-import com.example.myapplication.ui.theme.GreenPrimary
+import com.example.myapplication.ui.theme.OffWhite
+import com.example.myapplication.ui.theme.TealAccent
+import com.example.myapplication.ui.theme.TealDark
+import com.example.myapplication.ui.theme.TealMid
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 
 @Composable
 fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) {
-    val categories = listOf("Todas", "Trabajo", "Escuela", "Personal", "finanzas")
+    val categories = listOf("Todas", "Trabajo", "Escuela", "Personal", "Finanzas")
+    val selected = remember { mutableStateOf("Todas") }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(OffWhite)
             .padding(16.dp)
     ) {
         Row(
@@ -48,13 +55,15 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
             Text(
                 text = "Mis Grabaciones",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = TealDark
             )
             IconButton(onClick = onNavigateBack) {
                 Image(
                     painter = painterResource(id = R.drawable.salida),
                     contentDescription = "Atrás",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
+                    colorFilter = ColorFilter.tint(TealDark)
                 )
             }
         }
@@ -66,11 +75,11 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
         ) {
             items(categories) { category ->
                 Button(
-                    onClick = { /* TODO */ },
+                    onClick = { selected.value = category },
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (category == "Todas") Color(0xFF96A78D) else Color(0xFFD9E9CF),
-                        contentColor = if (category == "Todas") Color.White else GreenPrimary
+                        containerColor = if (selected.value == category) TealAccent else TealMid,
+                        contentColor = OffWhite
                     ),
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
                 ) {

@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,13 +58,14 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SnapRec") },
+                title = { Text("SnapRec", color = OffWhite) },
                 navigationIcon = {
                     IconButton(onClick = onExit) {
                         Image(
                             painter = painterResource(id = R.drawable.salida),
                             contentDescription = "Salir",
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
+                            colorFilter = ColorFilter.tint(OffWhite)
                         )
                     }
                 },
@@ -71,12 +73,13 @@ fun HomeScreen(
                     IconButton(onClick = onProfileClick) {
                         Image(
                             painter = painterResource(id = R.drawable.perfil),
-                            contentDescription = "Perfil"
+                            contentDescription = "Perfil",
+                            colorFilter = ColorFilter.tint(OffWhite)
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = OffWhite
+                    containerColor = TealDark
                 )
             )
         }
@@ -101,7 +104,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(100.dp)
                             .clip(CircleShape)
-                            .background(TealAccent),
+                            .background(TealMid),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -143,7 +146,7 @@ private fun HomeButton(icon: ImageVector, text: String, description: String, onC
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = TealMid),
+        colors = CardDefaults.cardColors(containerColor = TealAccent),
         onClick = onClick
     ) {
         Row(
@@ -154,15 +157,15 @@ private fun HomeButton(icon: ImageVector, text: String, description: String, onC
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(TealDark.copy(alpha = 0.2f)),
+                    .background(TealMid.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = Color.White)
+                Icon(imageVector = icon, contentDescription = null, tint = OffWhite)
             }
             Spacer(modifier = Modifier.size(16.dp))
             Column {
-                Text(text = text, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(text = description, color = Color.White.copy(alpha = 0.9f))
+                Text(text = text, fontWeight = FontWeight.Bold, color = OffWhite)
+                Text(text = description, color = OffWhite.copy(alpha = 0.9f))
             }
         }
     }

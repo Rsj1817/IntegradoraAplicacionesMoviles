@@ -2,11 +2,8 @@ package com.example.myapplication
 
 import android.Manifest
 import android.os.Bundle
-
-// ✅ IMPORTS QUE FALTABAN (LOS QUE ME PEDISTE)
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge

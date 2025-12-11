@@ -27,13 +27,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.R
+import com.example.myapplication.ui.theme.OffWhite
+import com.example.myapplication.ui.theme.TealAccent
+import com.example.myapplication.ui.theme.TealDark
+import com.example.myapplication.ui.theme.TealMid
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -48,13 +54,14 @@ fun NewRecordingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SnapRec") },
+                title = { Text("SnapRec", color = OffWhite) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Image(
                             painter = painterResource(id = R.drawable.flechasalida),
                             contentDescription = "Atrás",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
+                            colorFilter = ColorFilter.tint(OffWhite)
                         )
                     }
                 },
@@ -63,10 +70,14 @@ fun NewRecordingScreen(
                         Image(
                             painter = painterResource(id = R.drawable.trespuntos),
                             contentDescription = "Más opciones",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
+                            colorFilter = ColorFilter.tint(OffWhite)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = TealDark
+                )
             )
         }
     ) { paddingValues ->
@@ -74,11 +85,12 @@ fun NewRecordingScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(OffWhite)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = "00:00", fontSize = 72.sp)
+            Text(text = "00:00", fontSize = 72.sp, color = TealDark)
             Spacer(modifier = Modifier.height(32.dp))
             IconButton(
                 onClick = {
@@ -94,7 +106,7 @@ fun NewRecordingScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(CircleShape)
-                        .background(if (isRecording.value) Color.Red else Color(0xFFD9E9CF)),
+                        .background(if (isRecording.value) Color.Red else TealAccent),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isRecording.value) {
@@ -108,13 +120,17 @@ fun NewRecordingScreen(
                         Image(
                             painter = painterResource(id = R.drawable.microfono),
                             contentDescription = "Grabar",
-                            modifier = Modifier.size(64.dp)
+                            modifier = Modifier.size(64.dp),
+                            colorFilter = ColorFilter.tint(OffWhite)
                         )
                     }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = if (isRecording.value) "Presione para terminar de grabar" else "Presiona para iniciar la grabación")
+            Text(
+                text = if (isRecording.value) "Presione para terminar de grabar" else "Presiona para iniciar la grabación",
+                color = TealDark
+            )
         }
     }
 }
