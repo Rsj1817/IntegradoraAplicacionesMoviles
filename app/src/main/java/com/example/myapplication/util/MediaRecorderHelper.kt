@@ -29,4 +29,12 @@ class MediaRecorderHelper {
         recorder = null
         return outputFile
     }
+
+    fun pauseRecording() {
+        recorder?.pause()
+    }
+
+    fun resumeRecording() {
+        recorder?.resume()
+    }
 }

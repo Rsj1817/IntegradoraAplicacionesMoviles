@@ -18,6 +18,8 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.screens.LoginScreen
 import com.example.myapplication.ui.home.HomeScreen
 import com.example.myapplication.ui.recordings.RecordingsScreen
+import com.example.myapplication.ui.recordings.RecordingDetailScreen
+import android.net.Uri
 import com.example.myapplication.ui.newrecording.NewRecordingScreen
 
 class MainActivity : ComponentActivity() {
@@ -61,6 +63,17 @@ class MainActivity : ComponentActivity() {
 
                         composable("recordings") {
                             RecordingsScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenRecording = { name ->
+                                    navController.navigate("recording_detail/${Uri.encode(name)}")
+                                }
+                            )
+                        }
+
+                        composable("recording_detail/{name}") { backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name") ?: ""
+                            RecordingDetailScreen(
+                                name = name,
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
