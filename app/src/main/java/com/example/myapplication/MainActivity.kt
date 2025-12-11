@@ -19,6 +19,7 @@ import com.example.myapplication.ui.screens.LoginScreen
 import com.example.myapplication.ui.home.HomeScreen
 import com.example.myapplication.ui.recordings.RecordingsScreen
 import com.example.myapplication.ui.recordings.RecordingDetailScreen
+import com.example.myapplication.ui.favorites.FavoritesScreen
 import android.net.Uri
 import com.example.myapplication.ui.newrecording.NewRecordingScreen
 
@@ -57,12 +58,25 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNewRecordingClick = {
                                     navController.navigate("new_recording")
+                                },
+                                onFavoritesClick = {
+                                    navController.navigate("favorites")
                                 }
                             )
                         }
 
                         composable("recordings") {
                             RecordingsScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenRecording = { name ->
+                                    navController.navigate("recording_detail/${Uri.encode(name)}")
+                                },
+                                onOpenFavorites = { navController.navigate("favorites") }
+                            )
+                        }
+
+                        composable("favorites") {
+                            FavoritesScreen(
                                 onNavigateBack = { navController.popBackStack() },
                                 onOpenRecording = { name ->
                                     navController.navigate("recording_detail/${Uri.encode(name)}")
