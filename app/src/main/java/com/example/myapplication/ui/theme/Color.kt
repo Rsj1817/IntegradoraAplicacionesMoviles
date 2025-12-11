@@ -12,3 +12,8 @@ val Pink40 = Color(0xFF7D5260)
 
 val GreenPrimary = Color(0xFF96A78D)
 val GreenLight = Color(0xFFB6CEB4)
+
+val TealDark = Color(0xFF005461)
+val TealMid = Color(0xFF018790)
+val TealAccent = Color(0xFF00B7B5)
+val OffWhite = Color(0xFFF4F4F4)

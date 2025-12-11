@@ -40,6 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.R
+import com.example.myapplication.ui.theme.OffWhite
+import com.example.myapplication.ui.theme.TealAccent
+import com.example.myapplication.ui.theme.TealDark
+import com.example.myapplication.ui.theme.TealMid
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +76,7 @@ fun HomeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = OffWhite
                 )
             )
         }
@@ -81,12 +85,13 @@ fun HomeScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(OffWhite)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F5F3))
+                colors = CardDefaults.cardColors(containerColor = OffWhite)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -96,7 +101,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(100.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFD9E9CF)),
+                            .background(TealAccent),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -110,7 +115,7 @@ fun HomeScreen(
                         text = "¡Bienvenido(a) a SnapRec!",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF96A78D)
+                        color = TealDark
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -138,7 +143,7 @@ private fun HomeButton(icon: ImageVector, text: String, description: String, onC
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F5F3)),
+        colors = CardDefaults.cardColors(containerColor = TealMid),
         onClick = onClick
     ) {
         Row(
@@ -149,15 +154,15 @@ private fun HomeButton(icon: ImageVector, text: String, description: String, onC
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFD9E9CF)),
+                    .background(TealDark.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = Color(0xFF96A78D))
+                Icon(imageVector = icon, contentDescription = null, tint = Color.White)
             }
             Spacer(modifier = Modifier.size(16.dp))
             Column {
-                Text(text = text, fontWeight = FontWeight.Bold, color = Color(0xFF96A78D))
-                Text(text = description, color = Color.Gray)
+                Text(text = text, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = description, color = Color.White.copy(alpha = 0.9f))
             }
         }
     }

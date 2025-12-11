@@ -35,8 +35,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.R
-import com.example.myapplication.ui.theme.GreenLight
-import com.example.myapplication.ui.theme.GreenPrimary
+import com.example.myapplication.ui.theme.OffWhite
+import com.example.myapplication.ui.theme.TealAccent
+import com.example.myapplication.ui.theme.TealDark
+import com.example.myapplication.ui.theme.TealMid
 
 @Composable
 fun LoginScreen(
@@ -50,6 +52,7 @@ fun LoginScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(OffWhite)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top
     ) {
@@ -59,8 +62,8 @@ fun LoginScreen(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            GreenPrimary,
-                            GreenLight
+                            TealDark,
+                            TealMid
                         )
                     )
                 )
@@ -117,9 +120,9 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GreenPrimary,
-                    unfocusedBorderColor = GreenPrimary.copy(alpha = 0.3f),
-                    cursorColor = GreenPrimary
+                    focusedBorderColor = TealAccent,
+                    unfocusedBorderColor = TealAccent.copy(alpha = 0.3f),
+                    cursorColor = TealAccent
                 )
             )
 
@@ -132,9 +135,9 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GreenPrimary,
-                    unfocusedBorderColor = GreenPrimary.copy(alpha = 0.3f),
-                    cursorColor = GreenPrimary
+                    focusedBorderColor = TealAccent,
+                    unfocusedBorderColor = TealAccent.copy(alpha = 0.3f),
+                    cursorColor = TealAccent
                 ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
@@ -155,7 +158,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = TealAccent, contentColor = Color.White)
             ) {
                 Text("Iniciar Sesión")
             }
