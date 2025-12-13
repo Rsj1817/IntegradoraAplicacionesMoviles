@@ -26,6 +26,7 @@ import okhttp3.Request
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.example.myapplication.BuildConfig
 
 data class RecordingMeta(
     val category: String = "",
@@ -42,6 +43,23 @@ class RecordingMetadataRepository(private val app: Application) {
         prefs.edit().putString("last_base", base).apply()
     }
     private fun getSavedBase(): String? = prefs.getString("last_base", null)
+    fun currentSavedBase(): String? = prefs.getString("last_base", null)
+    fun clearSavedBase() {
+        prefs.edit().remove("last_base").apply()
+        chosenApi = null
+    }
+    suspend fun setManualBase(base: String): Boolean {
+        val b = if (base.endsWith("/")) base else "$base/"
+        return try {
+            val svc = buildApi(b)
+            svc.getRecordings()
+            saveBase(b)
+            chosenApi = svc
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 
     private fun isEmulator(): Boolean {
         val fp = Build.FINGERPRINT.lowercase()
@@ -53,8 +71,8 @@ class RecordingMetadataRepository(private val app: Application) {
 
     private fun buildApi(base: String): ApiService {
         val client = OkHttpClient.Builder()
-            .connectTimeout(1, TimeUnit.SECONDS)
-            .readTimeout(2, TimeUnit.SECONDS)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
             .build()
         return Retrofit.Builder()
             .baseUrl(if (base.endsWith("/")) base else "$base/")
@@ -69,110 +87,52 @@ class RecordingMetadataRepository(private val app: Application) {
         val saved = getSavedBase()
         if (saved != null) {
             try {
-                if (isReachable(saved)) {
-                    Log.d("RetrofitBase", "Using saved base: $saved")
-                    val svc = buildApi(saved)
-                    svc.getRecordings()
-                    chosenApi = svc
-                    return svc
-                }
+                val svc = buildApi(saved)
+                svc.getRecordings()
+                chosenApi = svc
+                return svc
             } catch (_: Exception) { }
         }
-        val candidates = if (isEmulator()) {
-            listOf("http://10.0.2.2:5000/")
-        } else {
-            listOf("http://127.0.0.1:5000/")
-        }
-        val hotspotGuesses = guessLocalCandidates()
         if (!isEmulator()) {
             val discovered = discoverViaUdp()
             if (discovered != null) {
                 try {
-                    if (isReachable(discovered)) {
-                        Log.d("RetrofitBase", "Using UDP discovered base: $discovered")
-                        val svc = buildApi(discovered)
-                        svc.getRecordings()
-                        chosenApi = svc
-                        saveBase(discovered)
-                        return svc
-                    }
-                } catch (_: Exception) { }
-            }
-            val scanned = scanSubnet()
-            if (scanned != null) {
-                try {
-                    if (isReachable(scanned)) {
-                        Log.d("RetrofitBase", "Using scanned base: $scanned")
-                        val svc = buildApi(scanned)
-                        svc.getRecordings()
-                        chosenApi = svc
-                        saveBase(scanned)
-                        return svc
-                    }
-                } catch (_: Exception) { }
-            }
-        }
-        for (base in candidates + hotspotGuesses) {
-            try {
-                if (isReachable(base)) {
-                    Log.d("RetrofitBase", "Using candidate base: $base")
-                    val svc = buildApi(base)
+                    val svc = buildApi(discovered)
                     svc.getRecordings()
                     chosenApi = svc
-                    saveBase(base)
+                    saveBase(discovered)
                     return svc
-                }
+                } catch (_: Exception) { }
+            }
+            try {
+                val svc = buildApi(BuildConfig.SERVER_BASE)
+                svc.getRecordings()
+                chosenApi = svc
+                saveBase(BuildConfig.SERVER_BASE)
+                return svc
+            } catch (_: Exception) { }
+        } else {
+            val base = "http://10.0.2.2:5000/"
+            try {
+                val svc = buildApi(base)
+                svc.getRecordings()
+                chosenApi = svc
+                saveBase(base)
+                return svc
             } catch (_: Exception) { }
         }
-        Log.d("RetrofitBase", "Using fallback RetrofitClient base")
-        val fallback = RetrofitClient.apiService
-        chosenApi = fallback
-        return fallback
+        val last = RetrofitClient.apiService
+        chosenApi = last
+        return last
     }
 
-    private suspend fun scanSubnet(): String? = withContext(Dispatchers.IO) {
-        try {
-            val client = OkHttpClient.Builder()
-                .connectTimeout(400, TimeUnit.MILLISECONDS)
-                .readTimeout(600, TimeUnit.MILLISECONDS)
-                .build()
-            val results = mutableSetOf<String>()
-            val interfaces = NetworkInterface.getNetworkInterfaces()
-            for (intf in interfaces) {
-                val inetAddrs = intf.inetAddresses
-                for (inet in inetAddrs) {
-                    val host = inet.hostAddress ?: continue
-                    if (host.contains(":")) continue
-                    if (host.startsWith("127.")) continue
-                    val parts = host.split(".")
-                    if (parts.size != 4) continue
-                    val prefix = "${parts[0]}.${parts[1]}.${parts[2]}"
-                    val myLast = parts[3].toIntOrNull() ?: 0
-                    val order = (listOf(myLast - 1, myLast + 1, 1, 10, 20, 30, 50, 100, 101, 150, 180, 200, 204, 220, 254) +
-                            (2..254)).distinct().filter { it in 1..254 }
-                    for (l in order) {
-                        val base = "http://$prefix.$l:5000/"
-                        try {
-                            val req = Request.Builder().url(base).get().build()
-                            client.newCall(req).execute().use { resp ->
-                                if (resp.isSuccessful) {
-                                    results.add(base)
-                                    return@withContext base
-                                }
-                            }
-                        } catch (_: Exception) { }
-                    }
-                }
-            }
-        } catch (_: Exception) { }
-        null
-    }
+    private suspend fun scanSubnet(): String? = withContext(Dispatchers.IO) { null }
 
     private fun isReachable(base: String): Boolean {
         return try {
             val client = OkHttpClient.Builder()
-                .connectTimeout(1, TimeUnit.SECONDS)
-                .readTimeout(2, TimeUnit.SECONDS)
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
                 .build()
             val url = if (base.endsWith("/")) base else "$base/"
             val req = Request.Builder().url(url).get().build()
@@ -183,40 +143,7 @@ class RecordingMetadataRepository(private val app: Application) {
         }
     }
 
-    private fun guessLocalCandidates(): List<String> {
-        val addrs = mutableListOf<String>()
-        try {
-            val interfaces = NetworkInterface.getNetworkInterfaces()
-            for (intf in interfaces) {
-                val inetAddrs = intf.inetAddresses
-                for (inet in inetAddrs) {
-                    val host = inet.hostAddress ?: continue
-                    if (host.contains(":")) continue // skip IPv6
-                    if (host.startsWith("127.")) continue
-                    val parts = host.split(".")
-                    if (parts.size == 4) {
-                        val prefix = "${parts[0]}.${parts[1]}.${parts[2]}"
-                        val last = parts[3].toIntOrNull() ?: 0
-                        val candidatesLast = listOf(1, 10, 20, 30, 50, 100, 101, 150, 200, 254, last - 1, last + 1)
-                            .mapNotNull { if (it in 1..254) it else null }
-                        candidatesLast.forEach { l ->
-                            addrs.add("http://$prefix.$l:5000/")
-                        }
-                    }
-                }
-            }
-        } catch (_: Exception) {
-        }
-        // Common Android hotspot prefix
-        val defaults = listOf(
-            "http://192.168.43.1:5000/",
-            "http://192.168.1.1:5000/",
-            "http://192.168.1.100:5000/",
-            "http://192.168.0.1:5000/",
-            "http://192.168.0.100:5000/"
-        )
-        return (addrs + defaults).distinct()
-    }
+    private fun guessLocalCandidates(): List<String> = emptyList()
 
     private suspend fun discoverViaUdp(): String? = withContext(Dispatchers.IO) {
         try {
@@ -271,27 +198,47 @@ class RecordingMetadataRepository(private val app: Application) {
     }
 
     suspend fun setCategory(fileName: String, category: String) {
+        ensureExists(fileName)
         val current = getRemoteOrDefault(fileName)
         val updated = current.copy(category = category)
-        ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        try {
+            ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        } catch (_: Exception) {
+            ensureApi().createRecording(toItem(fileName, updated))
+        }
     }
 
     suspend fun setTitle(fileName: String, title: String) {
+        ensureExists(fileName)
         val current = getRemoteOrDefault(fileName)
         val updated = current.copy(title = title)
-        ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        try {
+            ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        } catch (_: Exception) {
+            ensureApi().createRecording(toItem(fileName, updated))
+        }
     }
 
     suspend fun setNotes(fileName: String, notes: String) {
+        ensureExists(fileName)
         val current = getRemoteOrDefault(fileName)
         val updated = current.copy(notes = notes)
-        ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        try {
+            ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        } catch (_: Exception) {
+            ensureApi().createRecording(toItem(fileName, updated))
+        }
     }
 
     suspend fun setFavorite(fileName: String, favorite: Boolean) {
+        ensureExists(fileName)
         val current = getRemoteOrDefault(fileName)
         val updated = current.copy(favorite = favorite)
-        ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        try {
+            ensureApi().updateRecording(fileName, toItem(fileName, updated))
+        } catch (_: Exception) {
+            ensureApi().createRecording(toItem(fileName, updated))
+        }
     }
 
     suspend fun getCategory(fileName: String): String? = getRemoteOrDefault(fileName).category
@@ -304,44 +251,6 @@ class RecordingMetadataRepository(private val app: Application) {
             val list = ensureApi().getRecordings()
             list.associate { it.fileName to toMeta(it) }
         } catch (_: Exception) {
-            val bases = mutableListOf<String>()
-            val saved = getSavedBase()
-            if (!saved.isNullOrBlank()) bases.add(saved)
-            bases.addAll(
-                listOf(
-                    "http://192.168.0.204:5000/",
-                    "http://10.30.170.186:5000/",
-                    "http://127.0.0.1:5000/"
-                )
-            )
-            try {
-                val disc = discoverViaUdp()
-                if (disc != null) bases.add(disc)
-            } catch (_: Exception) { }
-            bases.addAll(guessLocalCandidates())
-            val client = OkHttpClient.Builder()
-                .connectTimeout(1, TimeUnit.SECONDS)
-                .readTimeout(2, TimeUnit.SECONDS)
-                .build()
-            for (b in bases.distinct()) {
-                val url = (if (b.endsWith("/")) b else "$b/") + "recordings"
-                try {
-                    val req = Request.Builder().url(url).get().build()
-                    client.newCall(req).execute().use { resp ->
-                        if (resp.isSuccessful) {
-                            val body = resp.body?.string() ?: "[]"
-                            val type = object : TypeToken<List<RecordingItem>>() {}.type
-                            val list = Gson().fromJson<List<RecordingItem>>(body, type)
-                            if (list.isNotEmpty()) {
-                                Log.d("RetrofitBase", "Fallback JSON success on: $b size=${list.size}")
-                                saveBase(b)
-                                return list.associate { it.fileName to toMeta(it) }
-                            }
-                        }
-                    }
-                } catch (_: Exception) { }
-            }
-            Log.d("RetrofitBase", "Fallback JSON failed on all bases")
             emptyMap()
         }
     }
@@ -384,8 +293,8 @@ class RecordingMetadataRepository(private val app: Application) {
     }
 
     private fun getRecordingsDirectory(app: Application): File {
-        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-        val snapRecDir = File(musicDir, "SnapRec")
+        val extMusic = app.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        val snapRecDir = File((extMusic ?: app.cacheDir), "SnapRec")
         if (!snapRecDir.exists()) {
             snapRecDir.mkdirs()
         }
@@ -403,13 +312,11 @@ class RecordingMetadataRepository(private val app: Application) {
             if (response.isSuccessful) {
                 val body = response.body() ?: return false
                 
-                // Intentar guardar en Music/SnapRec primero
-                val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-                val snapRecDir = File(musicDir, "SnapRec")
+                val extMusic = app.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+                val snapRecDir = File((extMusic ?: app.cacheDir), "SnapRec")
                 if (!snapRecDir.exists()) {
                     snapRecDir.mkdirs()
                 }
-                
                 val outputFile = if (snapRecDir.exists() && snapRecDir.canWrite()) {
                     File(snapRecDir, fileName)
                 } else {
@@ -454,9 +361,8 @@ class RecordingMetadataRepository(private val app: Application) {
             // Obtener lista de archivos locales (buscar en ambas ubicaciones)
             val localFiles = mutableSetOf<String>()
             
-            // Buscar en Music/SnapRec
-            val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-            val snapRecDir = File(musicDir, "SnapRec")
+            val extMusic = app.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+            val snapRecDir = File((extMusic ?: app.cacheDir), "SnapRec")
             if (snapRecDir.exists()) {
                 snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.forEach {
                     localFiles.add(it.name)
@@ -515,9 +421,8 @@ class RecordingMetadataRepository(private val app: Application) {
     }
     
     fun getLocalAudioFile(fileName: String): File? {
-        // Buscar en Music/SnapRec primero
-        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-        val snapRecDir = File(musicDir, "SnapRec")
+        val extMusic = app.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        val snapRecDir = File((extMusic ?: app.cacheDir), "SnapRec")
         val file1 = File(snapRecDir, fileName)
         if (file1.exists()) {
             return file1

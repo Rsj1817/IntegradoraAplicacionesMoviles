@@ -19,6 +19,7 @@ import com.example.myapplication.ui.recordings.RecordingDetailScreen
 import com.example.myapplication.ui.favorites.FavoritesScreen
 import android.net.Uri
 import com.example.myapplication.ui.newrecording.NewRecordingScreen
+import com.example.myapplication.ui.settings.ServerSettingsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +51,7 @@ class MainActivity : ComponentActivity() {
                         composable("home") {
                             HomeScreen(
                                 onExit = { navController.popBackStack() },
-                                onProfileClick = { },
+                                onProfileClick = { navController.navigate("settings") },
                                 onRecordingsClick = {
                                     navController.navigate("recordings")
                                 },
@@ -94,6 +95,11 @@ class MainActivity : ComponentActivity() {
                             NewRecordingScreen(
                                 onNavigateBack = { navController.popBackStack() },
                                 onMoreOptionsClick = { }
+                            )
+                        }
+                        composable("settings") {
+                            ServerSettingsScreen(
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
                     }

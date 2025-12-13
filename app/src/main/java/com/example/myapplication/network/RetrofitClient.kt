@@ -1,6 +1,7 @@
 package com.example.myapplication.network
 
 import android.os.Build
+import com.example.myapplication.BuildConfig
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -16,7 +17,7 @@ object RetrofitClient {
     }
 
     private val BASE_URL: String =
-        if (isEmulator()) "http://10.0.2.2:5000/" else "http://127.0.0.1:5000/"
+        if (isEmulator()) "http://10.0.2.2:5000/" else BuildConfig.SERVER_BASE
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()

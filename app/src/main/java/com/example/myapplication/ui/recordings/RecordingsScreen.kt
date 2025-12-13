@@ -49,7 +49,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import android.os.Build
 import com.example.myapplication.network.RetrofitClient
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import android.os.Environment
 
 @Composable
@@ -72,48 +72,12 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
     
 
     LaunchedEffect(Unit) {
-        var attempts = 0
-        var loaded = false
-        
-        // Primero intentar cargar y sincronizar
-        while (attempts < 20 && !loaded) {
-            try {
-                val data = metaRepo.loadAll()
-                if (data.isNotEmpty()) {
-                    // Sincronizar audios del servidor
-                    metaRepo.syncRecordingsFromServer()
-                    // Esperar a que se descarguen
-                    delay(1500)
-                    
-                    // Verificar qué archivos realmente existen localmente
-                    val existingFiles = mutableListOf<String>()
-                    val musicDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC)
-                    val snapRecDir = File(musicDir, "SnapRec")
-                    val cacheDir = context.cacheDir
-                    
-                    // Buscar archivos locales
-                    if (snapRecDir.exists()) {
-                        snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.forEach {
-                            existingFiles.add(it.name)
-                        }
-                    }
-                    cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.forEach {
-                        existingFiles.add(it.name)
-                    }
-                    
-                    // Mostrar TODAS las grabaciones del servidor (se descargarán si no existen)
-                    metaMapState.value = data
-                    recordings.value = data.keys.toList()
-                    loaded = true
-                } else {
-                    attempts++
-                    delay(500)
-                }
-            } catch (e: Exception) {
-                attempts++
-                delay(500)
-            }
-        }
+        try {
+            val data = metaRepo.loadAll()
+            metaMapState.value = data
+            recordings.value = data.keys.toList()
+            launch { metaRepo.syncRecordingsFromServer() }
+        } catch (_: Exception) { }
     }
 
     Column(

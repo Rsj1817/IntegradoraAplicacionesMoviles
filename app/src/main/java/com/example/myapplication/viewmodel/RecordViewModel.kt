@@ -26,17 +26,16 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
     val isPaused: StateFlow<Boolean> = _isPaused
 
     private fun getRecordingsDirectory(): File {
-        // Intentar usar Music/SnapRec en almacenamiento externo
-        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-        val snapRecDir = File(musicDir, "SnapRec")
-        if (!snapRecDir.exists()) {
-            snapRecDir.mkdirs()
+        val app = getApplication<Application>()
+        val extMusic = app.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        val snapDir = File((extMusic ?: app.cacheDir), "SnapRec")
+        if (!snapDir.exists()) {
+            snapDir.mkdirs()
         }
-        // Si no se puede usar almacenamiento externo, usar cacheDir como fallback
-        return if (snapRecDir.exists() && snapRecDir.canWrite()) {
-            snapRecDir
+        return if (snapDir.exists() && snapDir.canWrite()) {
+            snapDir
         } else {
-            getApplication<Application>().cacheDir
+            app.cacheDir
         }
     }
 

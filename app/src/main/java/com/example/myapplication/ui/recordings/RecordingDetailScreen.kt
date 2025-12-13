@@ -34,6 +34,7 @@ import com.example.myapplication.ui.theme.TealMid
 import com.example.myapplication.viewmodel.PlaybackViewModel
 import com.example.myapplication.viewmodel.PlaybackViewModelFactory
 import kotlinx.coroutines.launch
+import android.net.Uri
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,50 +52,27 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
     val files = remember { mutableStateOf(listOf<File>()) }
     
     LaunchedEffect(Unit) {
-        // Obtener lista de grabaciones del servidor
         val recordings = metaRepo.loadAll()
-        
-        // Sincronizar TODOS los audios del servidor
-        metaRepo.syncRecordingsFromServer()
-        
-        // Esperar a que se descarguen los archivos
-        kotlinx.coroutines.delay(3000)
-        
-        // Función helper para buscar archivos
+        scope.launch { metaRepo.syncRecordingsFromServer() }
         fun findLocalFiles(): List<File> {
-            val musicDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC)
-            val snapRecDir = File(musicDir, "SnapRec")
+            val extMusic = context.getExternalFilesDir(android.os.Environment.DIRECTORY_MUSIC)
+            val baseDir = extMusic ?: context.cacheDir
+            val snapRecDir = File(baseDir, "SnapRec")
             val cacheDir = context.cacheDir
-            
             val allFiles = mutableListOf<File>()
-            
-            // Buscar en SnapRec (accesible por USB) - TODOS los .mp4
             if (snapRecDir.exists()) {
-                snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
-                    allFiles.addAll(it)
-                }
+                snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let { allFiles.addAll(it) }
             }
-            
-            // Buscar en cacheDir (fallback) - TODOS los .mp4
-            cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
-                allFiles.addAll(it)
-            }
-            
+            cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let { allFiles.addAll(it) }
             return allFiles
         }
-        
         var allFiles = findLocalFiles()
-        
-        // Si no hay archivos pero hay grabaciones en el servidor, descargar todas
         if (allFiles.isEmpty() && recordings.isNotEmpty()) {
             for (fileName in recordings.keys) {
                 metaRepo.downloadAudio(fileName)
-                kotlinx.coroutines.delay(300) // Pequeño delay entre descargas
             }
-            kotlinx.coroutines.delay(2000) // Esperar a que terminen todas las descargas
-            allFiles = findLocalFiles() // Buscar de nuevo
+            allFiles = findLocalFiles()
         }
-        
         files.value = allFiles.sortedByDescending { it.lastModified() }
     }
 
@@ -103,8 +81,28 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
         files.value.getOrNull(currentIndex.value)?.let { vm.load(it) }
     }
     LaunchedEffect(files.value, name) {
-        val idx = files.value.indexOfFirst { it.name == name }.coerceAtLeast(0)
-        currentIndex.value = idx
+        val decodedName = try { Uri.decode(name) } catch (_: Exception) { name }
+        var idx = files.value.indexOfFirst { it.name == decodedName }
+        if (idx < 0 && decodedName.isNotBlank()) {
+            scope.launch {
+                metaRepo.downloadAudio(decodedName)
+                val extMusic = context.getExternalFilesDir(android.os.Environment.DIRECTORY_MUSIC)
+                val baseDir = extMusic ?: context.cacheDir
+                val snapRecDir = File(baseDir, "SnapRec")
+                val cacheDir = context.cacheDir
+                val refreshed = buildList {
+                    if (snapRecDir.exists()) {
+                        snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let { addAll(it.toList()) }
+                    }
+                    cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let { addAll(it.toList()) }
+                }.sortedByDescending { it.lastModified() }
+                files.value = refreshed
+                idx = refreshed.indexOfFirst { it.name == decodedName }
+                currentIndex.value = idx.coerceAtLeast(0)
+            }
+        } else {
+            currentIndex.value = idx.coerceAtLeast(0)
+        }
     }
     val favoriteState = remember { mutableStateOf(false) }
     val transcriptState = remember { mutableStateOf("") }
@@ -373,7 +371,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = TealAccent, contentColor = OffWhite),
                 contentPadding = PaddingValues(vertical = 4.dp)
             ) {
-                Text("Guardar", fontSize = 13.sp)
+                Text("Salir", fontSize = 13.sp)
             }
         }
 
