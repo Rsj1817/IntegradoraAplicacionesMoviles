@@ -52,6 +52,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.material3.ExperimentalMaterial3Api
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,50 +66,36 @@ fun FavoritesScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Uni
     val metaMapState = remember { mutableStateOf<Map<String, com.example.myapplication.data.RecordingMeta>>(emptyMap()) }
 
     LaunchedEffect(Unit) {
-        // Sincronizar audios del servidor primero
-        metaRepo.syncRecordingsFromServer()
-        
-        // Buscar en ambas ubicaciones: Music/SnapRec y cacheDir
-        val musicDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC)
-        val snapRecDir = File(musicDir, "SnapRec")
-        val cacheDir = context.cacheDir
-        
-        val allFiles = mutableListOf<File>()
-        
-        // Buscar en SnapRec (accesible por USB) - TODOS los .mp4
-        if (snapRecDir.exists()) {
-            snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
-                allFiles.addAll(it)
-            }
-        }
-        
-        // Buscar en cacheDir (fallback) - TODOS los .mp4
-        cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
-            allFiles.addAll(it)
-        }
-        
-        val files = allFiles.sortedByDescending { it.lastModified() }
-        val favs = mutableListOf<File>()
-        for (f in files) {
-            if (metaRepo.isFavorite(f.name)) {
-                favs.add(f)
-            }
-        }
-        favorites.value = favs
+        try {
+            metaRepo.syncRecordingsFromServer()
+            val allMeta = metaRepo.loadAll()
+            metaMapState.value = allMeta
 
-        metaMapState.value = metaRepo.loadAll()
+            val favs = mutableListOf<File>()
+            for ((fileName, meta) in allMeta) {
+                if (meta.favorite) {
+                    val local = metaRepo.getLocalAudioFile(fileName)
+                    if (local != null) {
+                        favs.add(local)
+                    }
+                }
+            }
+            favorites.value = favs.sortedByDescending { it.lastModified() }
 
-        val map = mutableMapOf<String, Int>()
-        favorites.value.forEach { f ->
-            try {
-                val player = MediaPlayer()
-                player.setDataSource(f.absolutePath)
-                player.prepare()
-                map[f.name] = player.duration
-                player.release()
-            } catch (_: Exception) {}
+            val map = mutableMapOf<String, Int>()
+            favorites.value.forEach { f ->
+                try {
+                    val player = MediaPlayer()
+                    player.setDataSource(f.absolutePath)
+                    player.prepare()
+                    map[f.name] = player.duration
+                    player.release()
+                } catch (_: Exception) {}
+            }
+            durations.value = map
+        } catch (_: Exception) {
+            Toast.makeText(context, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
         }
-        durations.value = map
     }
 
     Scaffold(topBar = {

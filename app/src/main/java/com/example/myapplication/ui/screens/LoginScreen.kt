@@ -48,6 +48,7 @@ fun LoginScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(
         modifier = modifier
@@ -153,7 +154,14 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { onAccept(email, password) },
+                onClick = {
+                    if (email == "admin" && password == "admin123") {
+                        errorMessage = null
+                        onAccept(email, password)
+                    } else {
+                        errorMessage = "Datos incorrectos"
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -161,6 +169,13 @@ fun LoginScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = TealAccent, contentColor = Color.White)
             ) {
                 Text("Iniciar Sesión")
+            }
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage ?: "",
+                    color = Color.Red
+                )
             }
         }
     }

@@ -51,6 +51,10 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
     val files = remember { mutableStateOf(listOf<File>()) }
     
+    val decodedName = remember(name) {
+        try { Uri.decode(name) } catch (_: Exception) { name }
+    }
+
     LaunchedEffect(Unit) {
         val recordings = metaRepo.loadAll()
         scope.launch { metaRepo.syncRecordingsFromServer() }
@@ -80,8 +84,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
     LaunchedEffect(files.value, currentIndex.value) {
         files.value.getOrNull(currentIndex.value)?.let { vm.load(it) }
     }
-    LaunchedEffect(files.value, name) {
-        val decodedName = try { Uri.decode(name) } catch (_: Exception) { name }
+    LaunchedEffect(files.value, decodedName) {
         var idx = files.value.indexOfFirst { it.name == decodedName }
         if (idx < 0 && decodedName.isNotBlank()) {
             scope.launch {
@@ -106,16 +109,6 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
     }
     val favoriteState = remember { mutableStateOf(false) }
     val transcriptState = remember { mutableStateOf("") }
-    LaunchedEffect(currentIndex.value) {
-        val f = files.value.getOrNull(currentIndex.value)
-        if (f != null) {
-            favoriteState.value = metaRepo.isFavorite(f.name)
-            transcriptState.value = metaRepo.getTranscript(f.name)
-        } else {
-            favoriteState.value = false
-            transcriptState.value = ""
-        }
-    }
 
     val isPlaying by vm.isPlaying.collectAsState()
     val durationMs by vm.durationMs.collectAsState()
@@ -125,12 +118,37 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
     val currentName = files.value.getOrNull(currentIndex.value)?.name ?: ""
     val titleState = remember { mutableStateOf(currentName) }
-    LaunchedEffect(currentName) {
-        if (currentName.isNotBlank()) {
-            val t = metaRepo.getTitle(currentName)
-            titleState.value = (t ?: currentName)
-        } else {
-            titleState.value = currentName
+    val notesState = remember { mutableStateOf("") }
+    val selected = remember { mutableStateOf("") }
+    LaunchedEffect(decodedName) {
+        if (decodedName.isBlank()) {
+            titleState.value = ""
+            notesState.value = ""
+            selected.value = ""
+            favoriteState.value = false
+            transcriptState.value = ""
+            return@LaunchedEffect
+        }
+        val initialTitle = titleState.value
+        val initialNotes = notesState.value
+        val initialCategory = selected.value
+        val initialFavorite = favoriteState.value
+        val initialTranscript = transcriptState.value
+        val meta = metaRepo.getMeta(decodedName)
+        if (titleState.value == initialTitle) {
+            titleState.value = meta.title.takeIf { it.isNotBlank() } ?: decodedName
+        }
+        if (notesState.value == initialNotes) {
+            notesState.value = meta.notes
+        }
+        if (selected.value == initialCategory) {
+            selected.value = meta.category
+        }
+        if (favoriteState.value == initialFavorite) {
+            favoriteState.value = meta.favorite
+        }
+        if (transcriptState.value == initialTranscript) {
+            transcriptState.value = meta.transcript
         }
     }
 
@@ -139,7 +157,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             .fillMaxSize()
             .background(OffWhite)
             .padding(16.dp)
-            .verticalScroll(scrollState), // Habilitar scroll por si acaso
+            .verticalScroll(scrollState), 
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -148,10 +166,11 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             Text(text = titleState.value, fontSize = 22.sp, color = TealDark, maxLines = 1)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = {
-                    val f = files.value.getOrNull(currentIndex.value) ?: return@IconButton
                     val newFav = !favoriteState.value
                     favoriteState.value = newFav
-                    scope.launch { metaRepo.setFavorite(f.name, newFav) }
+                    if (decodedName.isNotBlank()) {
+                        scope.launch { metaRepo.setFavorite(decodedName, newFav) }
+                    }
                 }) {
                     Icon(imageVector = if (favoriteState.value) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorito", tint = TealAccent)
                 }
@@ -202,7 +221,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             value = titleState.value,
             onValueChange = {
                 titleState.value = it
-                if (currentName.isNotBlank()) scope.launch { metaRepo.setTitle(currentName, it) }
+                if (decodedName.isNotBlank()) scope.launch { metaRepo.setTitle(decodedName, it) }
             },
             label = { Text("Título") },
             modifier = Modifier.fillMaxWidth()
@@ -213,11 +232,6 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
         val categories = listOf("Trabajo", "Escuela", "Personal")
         val expanded = remember { mutableStateOf(false) }
         val currentFile = files.value.getOrNull(currentIndex.value)
-        val selected = remember { mutableStateOf("") }
-        LaunchedEffect(currentIndex.value) {
-            val f = files.value.getOrNull(currentIndex.value)
-            selected.value = if (f != null) metaRepo.getCategory(f.name) ?: "" else ""
-        }
 
         ExposedDropdownMenuBox(expanded = expanded.value, onExpandedChange = { expanded.value = it }) {
             OutlinedTextField(
@@ -243,7 +257,9 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                         onClick = {
                             selected.value = cat
                             expanded.value = false
-                            currentFile?.let { scope.launch { metaRepo.setCategory(it.name, cat) } }
+                            if (decodedName.isNotBlank()) {
+                                scope.launch { metaRepo.setCategory(decodedName, cat) }
+                            }
                         }
                     )
                 }
@@ -263,22 +279,11 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.size(12.dp))
         }
 
-    val notesState = remember { mutableStateOf("") }
-        LaunchedEffect(currentIndex.value) {
-            val f = files.value.getOrNull(currentIndex.value)
-            if (f != null) {
-                titleState.value = metaRepo.getTitle(f.name) ?: f.name
-                notesState.value = metaRepo.getNotes(f.name) ?: ""
-            } else {
-                titleState.value = currentName
-                notesState.value = ""
-            }
-        }
         OutlinedTextField(
             value = notesState.value,
             onValueChange = {
                 notesState.value = it
-                currentFile?.let { f -> scope.launch { metaRepo.setNotes(f.name, it) } }
+                if (decodedName.isNotBlank()) scope.launch { metaRepo.setNotes(decodedName, it) }
             },
             label = { Text("Notas adicionales") },
             modifier = Modifier.fillMaxWidth().height(100.dp)
@@ -286,9 +291,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
         Spacer(modifier = Modifier.size(24.dp))
 
-        // --- BOTONES DE ACCIÓN (Corregidos para ser más chicos y caber bien) ---
-
-        // Fila 1: Actualizar y Transcribir
+        
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -298,14 +301,16 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                 onClick = {
                     val f = files.value.getOrNull(currentIndex.value) ?: return@Button
                     scope.launch {
-                        metaRepo.setTitle(f.name, titleState.value)
-                        metaRepo.setNotes(f.name, notesState.value)
+                        if (decodedName.isNotBlank()) {
+                            metaRepo.setTitle(decodedName, titleState.value)
+                            metaRepo.setNotes(decodedName, notesState.value)
+                        }
                         if (selected.value.isNotBlank()) metaRepo.setCategory(f.name, selected.value)
                     }
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TealDark, contentColor = OffWhite),
-                contentPadding = PaddingValues(vertical = 4.dp) // Botón menos alto
+                contentPadding = PaddingValues(vertical = 4.dp) 
             ) {
                 Text("Actualizar", fontSize = 13.sp)
             }
@@ -368,9 +373,11 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
                 onClick = {
                     val f = files.value.getOrNull(currentIndex.value) ?: return@Button
                     scope.launch {
-                        metaRepo.setTitle(f.name, titleState.value)
-                        metaRepo.setNotes(f.name, notesState.value)
-                        if (selected.value.isNotBlank()) metaRepo.setCategory(f.name, selected.value)
+                        if (decodedName.isNotBlank()) {
+                            metaRepo.setTitle(decodedName, titleState.value)
+                            metaRepo.setNotes(decodedName, notesState.value)
+                            if (selected.value.isNotBlank()) metaRepo.setCategory(decodedName, selected.value)
+                        }
                     }
                     onNavigateBack()
                 },

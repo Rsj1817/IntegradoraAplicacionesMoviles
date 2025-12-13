@@ -54,6 +54,7 @@ import com.example.myapplication.data.RecordingMetadataRepository
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import java.util.Locale
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -182,8 +183,12 @@ fun NewRecordingScreen(
                             val file = recordViewModel.stopRecording()
                             file?.let {
                                 scope.launch {
-                                    metaRepo.ensureExists(it.name)
-                                    metaRepo.uploadAudio(it.name, it)
+                                    try {
+                                        metaRepo.ensureExists(it.name)
+                                        metaRepo.uploadAudio(it.name, it)
+                                    } catch (_: Exception) {
+                                        Toast.makeText(app, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             }
                         },

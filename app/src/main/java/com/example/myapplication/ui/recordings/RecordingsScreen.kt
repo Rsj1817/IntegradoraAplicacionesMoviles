@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import java.io.File
 import java.text.SimpleDateFormat
@@ -83,7 +84,9 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                 metaMapState.value = updated
                 recordings.value = updated.keys.toList()
             }
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+            Toast.makeText(context, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Column(
@@ -113,7 +116,9 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                                 val data = metaRepo.loadAll()
                                 metaMapState.value = data
                                 recordings.value = data.keys.toList()
-                            } catch (_: Exception) { }
+                            } catch (_: Exception) {
+                                Toast.makeText(context, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     },
                     shape = RoundedCornerShape(20.dp),
