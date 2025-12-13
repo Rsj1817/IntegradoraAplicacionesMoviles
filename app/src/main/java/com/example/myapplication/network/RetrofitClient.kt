@@ -16,7 +16,7 @@ object RetrofitClient {
     }
 
     private val BASE_URL: String =
-        if (isEmulator()) "http://10.0.2.2:5000/" else "http://192.168.0.204:5000/"
+        if (isEmulator()) "http://10.0.2.2:5000/" else "http://127.0.0.1:5000/"
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()

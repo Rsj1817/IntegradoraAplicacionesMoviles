@@ -70,6 +70,7 @@ class RecordingMetadataRepository(private val app: Application) {
         if (saved != null) {
             try {
                 if (isReachable(saved)) {
+                    Log.d("RetrofitBase", "Using saved base: $saved")
                     val svc = buildApi(saved)
                     svc.getRecordings()
                     chosenApi = svc
@@ -80,12 +81,7 @@ class RecordingMetadataRepository(private val app: Application) {
         val candidates = if (isEmulator()) {
             listOf("http://10.0.2.2:5000/")
         } else {
-            listOf(
-                "http://192.168.0.204:5000/",
-                "http://10.30.170.186:5000/",
-                "http://127.0.0.1:5000/",
-                "http://10.221.7.186:5000/"
-            )
+            listOf("http://127.0.0.1:5000/")
         }
         val hotspotGuesses = guessLocalCandidates()
         if (!isEmulator()) {
@@ -93,6 +89,7 @@ class RecordingMetadataRepository(private val app: Application) {
             if (discovered != null) {
                 try {
                     if (isReachable(discovered)) {
+                        Log.d("RetrofitBase", "Using UDP discovered base: $discovered")
                         val svc = buildApi(discovered)
                         svc.getRecordings()
                         chosenApi = svc
@@ -101,10 +98,24 @@ class RecordingMetadataRepository(private val app: Application) {
                     }
                 } catch (_: Exception) { }
             }
+            val scanned = scanSubnet()
+            if (scanned != null) {
+                try {
+                    if (isReachable(scanned)) {
+                        Log.d("RetrofitBase", "Using scanned base: $scanned")
+                        val svc = buildApi(scanned)
+                        svc.getRecordings()
+                        chosenApi = svc
+                        saveBase(scanned)
+                        return svc
+                    }
+                } catch (_: Exception) { }
+            }
         }
         for (base in candidates + hotspotGuesses) {
             try {
                 if (isReachable(base)) {
+                    Log.d("RetrofitBase", "Using candidate base: $base")
                     val svc = buildApi(base)
                     svc.getRecordings()
                     chosenApi = svc
@@ -113,9 +124,48 @@ class RecordingMetadataRepository(private val app: Application) {
                 }
             } catch (_: Exception) { }
         }
+        Log.d("RetrofitBase", "Using fallback RetrofitClient base")
         val fallback = RetrofitClient.apiService
         chosenApi = fallback
         return fallback
+    }
+
+    private suspend fun scanSubnet(): String? = withContext(Dispatchers.IO) {
+        try {
+            val client = OkHttpClient.Builder()
+                .connectTimeout(400, TimeUnit.MILLISECONDS)
+                .readTimeout(600, TimeUnit.MILLISECONDS)
+                .build()
+            val results = mutableSetOf<String>()
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            for (intf in interfaces) {
+                val inetAddrs = intf.inetAddresses
+                for (inet in inetAddrs) {
+                    val host = inet.hostAddress ?: continue
+                    if (host.contains(":")) continue
+                    if (host.startsWith("127.")) continue
+                    val parts = host.split(".")
+                    if (parts.size != 4) continue
+                    val prefix = "${parts[0]}.${parts[1]}.${parts[2]}"
+                    val myLast = parts[3].toIntOrNull() ?: 0
+                    val order = (listOf(myLast - 1, myLast + 1, 1, 10, 20, 30, 50, 100, 101, 150, 180, 200, 204, 220, 254) +
+                            (2..254)).distinct().filter { it in 1..254 }
+                    for (l in order) {
+                        val base = "http://$prefix.$l:5000/"
+                        try {
+                            val req = Request.Builder().url(base).get().build()
+                            client.newCall(req).execute().use { resp ->
+                                if (resp.isSuccessful) {
+                                    results.add(base)
+                                    return@withContext base
+                                }
+                            }
+                        } catch (_: Exception) { }
+                    }
+                }
+            }
+        } catch (_: Exception) { }
+        null
     }
 
     private fun isReachable(base: String): Boolean {
@@ -283,6 +333,7 @@ class RecordingMetadataRepository(private val app: Application) {
                             val type = object : TypeToken<List<RecordingItem>>() {}.type
                             val list = Gson().fromJson<List<RecordingItem>>(body, type)
                             if (list.isNotEmpty()) {
+                                Log.d("RetrofitBase", "Fallback JSON success on: $b size=${list.size}")
                                 saveBase(b)
                                 return list.associate { it.fileName to toMeta(it) }
                             }
@@ -290,6 +341,7 @@ class RecordingMetadataRepository(private val app: Application) {
                     }
                 } catch (_: Exception) { }
             }
+            Log.d("RetrofitBase", "Fallback JSON failed on all bases")
             emptyMap()
         }
     }
