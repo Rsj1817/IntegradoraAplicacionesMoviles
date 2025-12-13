@@ -1,6 +1,7 @@
 package com.example.myapplication.viewmodel
 
 import android.app.Application
+import android.os.Environment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.util.MediaRecorderHelper
@@ -24,9 +25,25 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused
 
+    private fun getRecordingsDirectory(): File {
+        // Intentar usar Music/SnapRec en almacenamiento externo
+        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+        val snapRecDir = File(musicDir, "SnapRec")
+        if (!snapRecDir.exists()) {
+            snapRecDir.mkdirs()
+        }
+        // Si no se puede usar almacenamiento externo, usar cacheDir como fallback
+        return if (snapRecDir.exists() && snapRecDir.canWrite()) {
+            snapRecDir
+        } else {
+            getApplication<Application>().cacheDir
+        }
+    }
+
     fun startRecording() {
+        val recordingsDir = getRecordingsDirectory()
         val file = File(
-            getApplication<Application>().cacheDir,
+            recordingsDir,
             "audio_${System.currentTimeMillis()}.mp4"
         )
 

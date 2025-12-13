@@ -2,6 +2,7 @@ package com.example.myapplication.ui.favorites
 
 import android.app.Application
 import android.media.MediaPlayer
+import android.os.Environment
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -64,10 +65,29 @@ fun FavoritesScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Uni
     val metaMapState = remember { mutableStateOf<Map<String, com.example.myapplication.data.RecordingMeta>>(emptyMap()) }
 
     LaunchedEffect(Unit) {
-        val dir = context.cacheDir
-        val files = dir.listFiles { f ->
-            f.isFile && f.name.startsWith("audio_") && f.name.endsWith(".mp4")
-        }?.sortedByDescending { it.lastModified() } ?: emptyList()
+        // Sincronizar audios del servidor primero
+        metaRepo.syncRecordingsFromServer()
+        
+        // Buscar en ambas ubicaciones: Music/SnapRec y cacheDir
+        val musicDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC)
+        val snapRecDir = File(musicDir, "SnapRec")
+        val cacheDir = context.cacheDir
+        
+        val allFiles = mutableListOf<File>()
+        
+        // Buscar en SnapRec (accesible por USB) - TODOS los .mp4
+        if (snapRecDir.exists()) {
+            snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
+                allFiles.addAll(it)
+            }
+        }
+        
+        // Buscar en cacheDir (fallback) - TODOS los .mp4
+        cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
+            allFiles.addAll(it)
+        }
+        
+        val files = allFiles.sortedByDescending { it.lastModified() }
         val favs = mutableListOf<File>()
         for (f in files) {
             if (metaRepo.isFavorite(f.name)) {

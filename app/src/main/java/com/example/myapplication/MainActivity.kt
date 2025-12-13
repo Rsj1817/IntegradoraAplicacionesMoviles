@@ -24,6 +24,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val prefs = getSharedPreferences("retrofit_config", MODE_PRIVATE)
+        prefs.edit().putString("last_base", "http://192.168.0.204:5000/").apply()
 
         setContent {
             MyApplicationTheme {

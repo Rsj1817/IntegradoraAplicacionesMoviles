@@ -1,6 +1,7 @@
 package com.example.myapplication.ui.recordings
 
 import android.app.Application
+import android.os.Environment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -48,10 +49,53 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
     val scrollState = rememberScrollState()
 
     val files = remember { mutableStateOf(listOf<File>()) }
+    
     LaunchedEffect(Unit) {
-        val dir = context.cacheDir
-        files.value = dir.listFiles { f -> f.isFile && f.name.startsWith("audio_") && f.name.endsWith(".mp4") }
-            ?.sortedByDescending { it.lastModified() } ?: emptyList()
+        // Obtener lista de grabaciones del servidor
+        val recordings = metaRepo.loadAll()
+        
+        // Sincronizar TODOS los audios del servidor
+        metaRepo.syncRecordingsFromServer()
+        
+        // Esperar a que se descarguen los archivos
+        kotlinx.coroutines.delay(3000)
+        
+        // Función helper para buscar archivos
+        fun findLocalFiles(): List<File> {
+            val musicDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC)
+            val snapRecDir = File(musicDir, "SnapRec")
+            val cacheDir = context.cacheDir
+            
+            val allFiles = mutableListOf<File>()
+            
+            // Buscar en SnapRec (accesible por USB) - TODOS los .mp4
+            if (snapRecDir.exists()) {
+                snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
+                    allFiles.addAll(it)
+                }
+            }
+            
+            // Buscar en cacheDir (fallback) - TODOS los .mp4
+            cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.let {
+                allFiles.addAll(it)
+            }
+            
+            return allFiles
+        }
+        
+        var allFiles = findLocalFiles()
+        
+        // Si no hay archivos pero hay grabaciones en el servidor, descargar todas
+        if (allFiles.isEmpty() && recordings.isNotEmpty()) {
+            for (fileName in recordings.keys) {
+                metaRepo.downloadAudio(fileName)
+                kotlinx.coroutines.delay(300) // Pequeño delay entre descargas
+            }
+            kotlinx.coroutines.delay(2000) // Esperar a que terminen todas las descargas
+            allFiles = findLocalFiles() // Buscar de nuevo
+        }
+        
+        files.value = allFiles.sortedByDescending { it.lastModified() }
     }
 
     val currentIndex = remember { mutableStateOf(0) }

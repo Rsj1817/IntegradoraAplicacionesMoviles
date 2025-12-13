@@ -181,7 +181,10 @@ fun NewRecordingScreen(
                         onClick = {
                             val file = recordViewModel.stopRecording()
                             file?.let {
-                                scope.launch { metaRepo.ensureExists(it.name) }
+                                scope.launch {
+                                    metaRepo.ensureExists(it.name)
+                                    metaRepo.uploadAudio(it.name, it)
+                                }
                             }
                         },
                         modifier = Modifier.size(100.dp)

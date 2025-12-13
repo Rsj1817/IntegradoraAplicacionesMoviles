@@ -48,6 +48,9 @@ import android.app.Application
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import android.os.Build
+import com.example.myapplication.network.RetrofitClient
+import kotlinx.coroutines.delay
+import android.os.Environment
 
 @Composable
 fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Unit, onOpenFavorites: () -> Unit, modifier: Modifier = Modifier) {
@@ -58,7 +61,6 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
     val metaRepo = remember { RecordingMetadataRepository(app) }
     val metaMapState = remember { mutableStateOf<Map<String, RecordingMeta>>(emptyMap()) }
     val recordings = remember { mutableStateOf<List<String>>(emptyList()) }
-    val serverWarning = remember { mutableStateOf("") }
     val isEmulator = remember {
         val fp = Build.FINGERPRINT.lowercase()
         val prod = Build.PRODUCT.lowercase()
@@ -67,15 +69,50 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                 prod.contains("sdk") || prod.contains("emulator") ||
                 model.contains("emulator")
     }
+    
 
     LaunchedEffect(Unit) {
-        val data = metaRepo.loadAll()
-        metaMapState.value = data
-        recordings.value = data.keys.toList()
-        if (!isEmulator && data.isEmpty()) {
-            serverWarning.value = "Sin conexión al servidor: conecta el celular por USB y ejecuta 'adb reverse tcp:5000 tcp:5000', o configura la app para apuntar al IP de tu PC (por ejemplo http://192.168.x.x:5000)."
-        } else {
-            serverWarning.value = ""
+        var attempts = 0
+        var loaded = false
+        
+        // Primero intentar cargar y sincronizar
+        while (attempts < 20 && !loaded) {
+            try {
+                val data = metaRepo.loadAll()
+                if (data.isNotEmpty()) {
+                    // Sincronizar audios del servidor
+                    metaRepo.syncRecordingsFromServer()
+                    // Esperar a que se descarguen
+                    delay(1500)
+                    
+                    // Verificar qué archivos realmente existen localmente
+                    val existingFiles = mutableListOf<String>()
+                    val musicDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC)
+                    val snapRecDir = File(musicDir, "SnapRec")
+                    val cacheDir = context.cacheDir
+                    
+                    // Buscar archivos locales
+                    if (snapRecDir.exists()) {
+                        snapRecDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.forEach {
+                            existingFiles.add(it.name)
+                        }
+                    }
+                    cacheDir.listFiles { f -> f.isFile && f.name.endsWith(".mp4") }?.forEach {
+                        existingFiles.add(it.name)
+                    }
+                    
+                    // Mostrar TODAS las grabaciones del servidor (se descargarán si no existen)
+                    metaMapState.value = data
+                    recordings.value = data.keys.toList()
+                    loaded = true
+                } else {
+                    attempts++
+                    delay(500)
+                }
+            } catch (e: Exception) {
+                attempts++
+                delay(500)
+            }
         }
     }
 
@@ -108,17 +145,7 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (serverWarning.value.isNotBlank()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFFE0E0), RoundedCornerShape(12.dp))
-                    .padding(12.dp)
-            ) {
-                Text(text = serverWarning.value, color = Color(0xFF8B0000))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-        }
+        
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp)

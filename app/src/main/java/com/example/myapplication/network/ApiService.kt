@@ -45,6 +45,18 @@ interface ApiService {
     suspend fun deleteRecording(@Path("fileName") fileName: String)
 
     @retrofit2.http.Multipart
+    @POST("recordings/{fileName}/upload")
+    suspend fun uploadRecording(
+        @Path("fileName") fileName: String,
+        @retrofit2.http.Part file: okhttp3.MultipartBody.Part
+    ): RecordingItem
+
+    @GET("recordings/{fileName}/download")
+    suspend fun downloadRecording(
+        @Path("fileName") fileName: String
+    ): retrofit2.Response<okhttp3.ResponseBody>
+
+    @retrofit2.http.Multipart
     @POST("recordings/{fileName}/transcribe")
     suspend fun transcribeRecording(
         @Path("fileName") fileName: String,
