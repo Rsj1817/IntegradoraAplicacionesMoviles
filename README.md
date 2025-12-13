@@ -55,7 +55,7 @@ Para una visión completa de la aplicación, aquí están las pantallas clave:
   </tr>
   <tr>
     <td colspan="3" style="text-align:center;">
-      <img src="./app/src/main/java/com/example/myapplication/ImgGit/GestionNotas.jpeg" alt="Pantalla de gestión de notas con transcripción y notas adicionales" width="140" height="280" style="border: 1px solid #ccc;" />
+      <img src="./app/src/main/java/com/example/myapplication/ImgGit/GestionNotas.jpeg" alt="Pantalla de gestión de notas con transcripción y notas adicionales" width="240" height="380" style="border: 1px solid #ccc;" />
       <p>Gestión de notas y transcripción</p>
     </td>
   </tr>
