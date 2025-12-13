@@ -1,6 +1,6 @@
 # 📱 IntegradoraAplicacionesMoviles
 
-<img src="image_0.png" alt="Logo de SnapRec" style="max-width:150px; height:auto; display:block; margin-bottom:12px;" /> 
+<img src="./app/src/main/java/com/example/myapplication/ImgGit/Pantalla%20de%20Inicio.png" alt="Pantalla de inicio de SnapRec" style="max-width:150px; height:auto; display:block; margin-bottom:12px;" /> 
 
 # SnapRec: Gestión Inteligente de Audios
 
@@ -28,37 +28,41 @@ Este proyecto fue desarrollado colaborativamente por:
 Para una visión completa de la aplicación, aquí están las pantallas clave:
 
 <table>
-  <tr>
-    <th>Login</th>
-    <th>Pantalla de Inicio</th>
-    <th>Grabación en Curso</th>
-  </tr>
-  <tr>
-    <td style="text-align:center;">
-      <img src="./screenshots/login.png" alt="Pantalla de Iniciar Sesión para sincronizar notas" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
-      <p>Iniciar Sesión</p>
-    </td>
-    <td style="text-align:center;">
-      <img src="./screenshots/bienvenida.png" alt="Pantalla de Bienvenida con opciones: Nueva Grabación, Mis Grabaciones, Favoritos" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
-      <p>Pantalla de Bienvenida</p>
-    </td>
-    <td style="text-align:center;">
-      <img src="./screenshots/grabacion.png" alt="Pantalla mostrando la grabación en curso con contador y botones de Pausa y Detener" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
-      <p>Grabación de Audio</p>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="3" style="height:20px;"></td>   </tr>
-  <tr>
-    <th colspan="3">Gestión de Notas</th>
-  </tr>
-  <tr>
-    <td colspan="3" style="text-align:center;">
-      <img src="./screenshots/mis_grabaciones.png" alt="Lista de grabaciones guardadas y categorizadas: Todas, Trabajo, Escuela" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
-      <p>Mis Grabaciones con categorización</p>
-    </td>
-  </tr>
+  <tr>
+    <th>Pantalla de Inicio</th>
+    <th>Grabación en Curso</th>
+    <th>Detalle de Grabación</th>
+  </tr>
+  <tr>
+    <td style="text-align:center;">
+      <img src="./app/src/main/java/com/example/myapplication/ImgGit/Pantalla%20de%20Inicio.png" alt="Pantalla de Bienvenida con opciones: Nueva Grabación, Mis Grabaciones, Favoritos" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
+      <p>Pantalla de Inicio</p>
+    </td>
+    <td style="text-align:center;">
+      <img src="./app/src/main/java/com/example/myapplication/ImgGit/Uso%20del%20Sensor.png" alt="Pantalla mostrando el uso del micrófono para la grabación en curso" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
+      <p>Grabación de Audio</p>
+    </td>
+    <td style="text-align:center;">
+      <img src="./app/src/main/java/com/example/myapplication/ImgGit/Operación%20CRUD.png" alt="Pantalla de detalle de grabación con controles, título, categoría, notas y botones para Actualizar, Transcribir, Eliminar y Salir" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
+      <p>Detalle de Grabación</p>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="3" style="height:20px;"></td>
+  </tr>
+  <tr>
+    <th colspan="3">Gestión de Notas</th>
+  </tr>
+  <tr>
+    <td colspan="3" style="text-align:center;">
+      <img src="./app/src/main/java/com/example/myapplication/ImgGit/Operación%20CRUD.png" alt="Lista de grabaciones guardadas y categorizadas: Todas, Trabajo, Escuela" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
+      <p>Mis Grabaciones con categorización</p>
+    </td>
+  </tr>
 </table>
+
+> Nota: para que las capturas se vean correctamente en el README, las imágenes deben estar en la carpeta `ElQueTengoQueHacer/app/src/main/java/com/example/myapplication/ImgGit/` con los nombres:
+> `Pantalla de Inicio.png`, `Uso del Sensor.png`, `Operación CRUD.png`.
 
 ---
 
