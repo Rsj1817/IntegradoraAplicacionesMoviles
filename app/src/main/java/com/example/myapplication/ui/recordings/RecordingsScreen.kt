@@ -37,6 +37,7 @@ import com.example.myapplication.ui.theme.TealDark
 import com.example.myapplication.ui.theme.TealMid
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.clickable
 import java.io.File
@@ -50,7 +51,6 @@ import androidx.compose.material.icons.filled.Favorite
 import android.os.Build
 import com.example.myapplication.network.RetrofitClient
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import android.os.Environment
 
 @Composable
@@ -62,6 +62,7 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
     val metaRepo = remember { RecordingMetadataRepository(app) }
     val metaMapState = remember { mutableStateOf<Map<String, RecordingMeta>>(emptyMap()) }
     val recordings = remember { mutableStateOf<List<String>>(emptyList()) }
+    val scope = rememberCoroutineScope()
     val isEmulator = remember {
         val fp = Build.FINGERPRINT.lowercase()
         val prod = Build.PRODUCT.lowercase()
@@ -77,14 +78,6 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
             recordings.value = data.keys.toList()
             launch { metaRepo.syncRecordingsFromServer() }
         } catch (_: Exception) { }
-        while (true) {
-            try {
-                val data = metaRepo.loadAll()
-                metaMapState.value = data
-                recordings.value = data.keys.toList()
-            } catch (_: Exception) { }
-            delay(2000)
-        }
     }
 
     Column(
@@ -98,12 +91,34 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Mis Grabaciones",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = TealDark
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Mis Grabaciones",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TealDark
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Button(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val data = metaRepo.loadAll()
+                                metaMapState.value = data
+                                recordings.value = data.keys.toList()
+                            } catch (_: Exception) { }
+                        }
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TealMid,
+                        contentColor = OffWhite
+                    )
+                ) {
+                    Text(text = "Refrescar")
+                }
+            }
             IconButton(onClick = onNavigateBack) {
                 Image(
                     painter = painterResource(id = R.drawable.salida),
