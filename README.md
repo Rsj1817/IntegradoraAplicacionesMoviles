@@ -1,5 +1,5 @@
 # IntegradoraAplicacionesMoviles
-# SnapRec![Logo de SnaPrec](./ruta/a/tu/logo.png)
+# SnapRec![Logo de SnaPrec](image_0.png)
 
 # Descripción del Proyecto:
 SnapRec es una herramienta de productividad diseñada para capturar ideas al instante. Funciona como una grabadora de voz avanzada que no solo almacena el audio, sino que **transforma automáticamente la voz en texto**, permitiendo a los usuarios crear notas rápidas y precisas sin necesidad de escribir.
