@@ -31,6 +31,7 @@ import com.example.myapplication.ui.theme.OffWhite
 import com.example.myapplication.ui.theme.TealAccent
 import com.example.myapplication.ui.theme.TealDark
 import com.example.myapplication.ui.theme.TealMid
+import kotlinx.coroutines.delay
 import com.example.myapplication.viewmodel.PlaybackViewModel
 import com.example.myapplication.viewmodel.PlaybackViewModelFactory
 import kotlinx.coroutines.launch
@@ -263,7 +264,7 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.size(12.dp))
         }
 
-        val notesState = remember { mutableStateOf("") }
+    val notesState = remember { mutableStateOf("") }
         LaunchedEffect(currentIndex.value) {
             val f = files.value.getOrNull(currentIndex.value)
             if (f != null) {
@@ -285,6 +286,34 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
         )
 
         Spacer(modifier = Modifier.size(24.dp))
+
+        LaunchedEffect(currentName) {
+            if (currentName.isBlank()) return@LaunchedEffect
+            while (true) {
+                val meta = metaRepo.getMeta(currentName)
+                val remoteTitle = meta.title.ifBlank { currentName }
+                if (remoteTitle != titleState.value) {
+                    titleState.value = remoteTitle
+                }
+                val remoteNotes = meta.notes
+                if (remoteNotes != notesState.value) {
+                    notesState.value = remoteNotes
+                }
+                val remoteFav = meta.favorite
+                if (remoteFav != favoriteState.value) {
+                    favoriteState.value = remoteFav
+                }
+                val remoteCat = meta.category
+                if (remoteCat != selected.value) {
+                    selected.value = remoteCat
+                }
+                val remoteTranscript = meta.transcript
+                if (remoteTranscript != transcriptState.value) {
+                    transcriptState.value = remoteTranscript
+                }
+                delay(2000)
+            }
+        }
 
         // --- BOTONES DE ACCIÓN (Corregidos para ser más chicos y caber bien) ---
 

@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Favorite
 import android.os.Build
 import com.example.myapplication.network.RetrofitClient
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import android.os.Environment
 
 @Composable
@@ -69,8 +70,6 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                 prod.contains("sdk") || prod.contains("emulator") ||
                 model.contains("emulator")
     }
-    
-
     LaunchedEffect(Unit) {
         try {
             val data = metaRepo.loadAll()
@@ -78,6 +77,14 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
             recordings.value = data.keys.toList()
             launch { metaRepo.syncRecordingsFromServer() }
         } catch (_: Exception) { }
+        while (true) {
+            try {
+                val data = metaRepo.loadAll()
+                metaMapState.value = data
+                recordings.value = data.keys.toList()
+            } catch (_: Exception) { }
+            delay(2000)
+        }
     }
 
     Column(

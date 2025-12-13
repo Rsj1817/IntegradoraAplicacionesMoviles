@@ -197,6 +197,8 @@ class RecordingMetadataRepository(private val app: Application) {
         }
     }
 
+    suspend fun getMeta(fileName: String): RecordingMeta = getRemoteOrDefault(fileName)
+
     suspend fun setCategory(fileName: String, category: String) {
         ensureExists(fileName)
         val current = getRemoteOrDefault(fileName)
@@ -268,9 +270,9 @@ class RecordingMetadataRepository(private val app: Application) {
             val body = RequestBody.create("audio/mp4".toMediaTypeOrNull(), file)
             val part = MultipartBody.Part.createFormData("file", file.name, body)
             val updated = ensureApi().transcribeRecording(fileName, part)
-            updated.transcript
-        } catch (_: Exception) {
-            ""
+            updated.transcript.ifBlank { "Transcripción vacía desde el servidor" }
+        } catch (e: Exception) {
+            "Error al transcribir: ${e.message ?: "desconocido"}"
         }
     }
 
