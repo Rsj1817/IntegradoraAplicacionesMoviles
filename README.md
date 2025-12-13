@@ -1,7 +1,5 @@
 # 📱 IntegradoraAplicacionesMoviles
 
-<img src="./app/src/main/java/com/example/myapplication/ImgGit/Pantalla%20de%20Inicio.png" alt="Pantalla de inicio de SnapRec" style="max-width:150px; height:auto; display:block; margin-bottom:12px;" /> 
-
 # SnapRec: Gestión Inteligente de Audios
 
 ## ✨ Descripción del Proyecto:
