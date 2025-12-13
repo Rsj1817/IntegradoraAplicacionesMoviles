@@ -61,9 +61,6 @@ Para una visión completa de la aplicación, aquí están las pantallas clave:
   </tr>
 </table>
 
-> Nota: para que las capturas se vean correctamente en el README, las imágenes deben estar en la carpeta `ElQueTengoQueHacer/app/src/main/java/com/example/myapplication/ImgGit/` con los nombres:
-> `Pantalla de Inicio.png`, `Uso del Sensor.png`, `Operación CRUD.png`.
-
 ---
 
 ## ⚙️ Funcionalidades Clave:
