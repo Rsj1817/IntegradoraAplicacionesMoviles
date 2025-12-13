@@ -77,6 +77,12 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
             metaMapState.value = data
             recordings.value = data.keys.toList()
             launch { metaRepo.syncRecordingsFromServer() }
+            launch {
+                metaRepo.cleanupZeroLengthRecordings()
+                val updated = metaRepo.loadAll()
+                metaMapState.value = updated
+                recordings.value = updated.keys.toList()
+            }
         } catch (_: Exception) { }
     }
 
@@ -103,6 +109,7 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, onOpenRecording: (String) -> Un
                     onClick = {
                         scope.launch {
                             try {
+                                metaRepo.cleanupZeroLengthRecordings()
                                 val data = metaRepo.loadAll()
                                 metaMapState.value = data
                                 recordings.value = data.keys.toList()

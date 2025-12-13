@@ -421,7 +421,35 @@ class RecordingMetadataRepository(private val app: Application) {
             false
         }
     }
-    
+
+    suspend fun cleanupZeroLengthRecordings() {
+        val data = try {
+            loadAll()
+        } catch (_: Exception) {
+            emptyMap()
+        }
+        if (data.isEmpty()) return
+        for (fileName in data.keys) {
+            var localFile = getLocalAudioFile(fileName)
+            if (localFile == null || !localFile.exists()) {
+                val downloaded = downloadAudio(fileName)
+                if (downloaded) {
+                    localFile = getLocalAudioFile(fileName)
+                }
+            }
+            if (localFile == null || !localFile.exists() || localFile.length() == 0L) {
+                try {
+                    localFile?.delete()
+                } catch (_: Exception) {
+                }
+                try {
+                    delete(fileName)
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
     fun getLocalAudioFile(fileName: String): File? {
         val extMusic = app.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
         val snapRecDir = File((extMusic ?: app.cacheDir), "SnapRec")

@@ -31,7 +31,6 @@ import com.example.myapplication.ui.theme.OffWhite
 import com.example.myapplication.ui.theme.TealAccent
 import com.example.myapplication.ui.theme.TealDark
 import com.example.myapplication.ui.theme.TealMid
-import kotlinx.coroutines.delay
 import com.example.myapplication.viewmodel.PlaybackViewModel
 import com.example.myapplication.viewmodel.PlaybackViewModelFactory
 import kotlinx.coroutines.launch
@@ -287,34 +286,6 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
 
         Spacer(modifier = Modifier.size(24.dp))
 
-        LaunchedEffect(currentName) {
-            if (currentName.isBlank()) return@LaunchedEffect
-            while (true) {
-                val meta = metaRepo.getMeta(currentName)
-                val remoteTitle = meta.title.ifBlank { currentName }
-                if (remoteTitle != titleState.value) {
-                    titleState.value = remoteTitle
-                }
-                val remoteNotes = meta.notes
-                if (remoteNotes != notesState.value) {
-                    notesState.value = remoteNotes
-                }
-                val remoteFav = meta.favorite
-                if (remoteFav != favoriteState.value) {
-                    favoriteState.value = remoteFav
-                }
-                val remoteCat = meta.category
-                if (remoteCat != selected.value) {
-                    selected.value = remoteCat
-                }
-                val remoteTranscript = meta.transcript
-                if (remoteTranscript != transcriptState.value) {
-                    transcriptState.value = remoteTranscript
-                }
-                delay(2000)
-            }
-        }
-
         // --- BOTONES DE ACCIÓN (Corregidos para ser más chicos y caber bien) ---
 
         // Fila 1: Actualizar y Transcribir
@@ -366,16 +337,23 @@ fun RecordingDetailScreen(name: String, onNavigateBack: () -> Unit) {
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    val f = files.value.getOrNull(currentIndex.value) ?: return@Button
+                    val f = files.value.getOrNull(currentIndex.value)
                     vm.release()
-                    try { f.delete() } catch (_: Exception) {}
-                    scope.launch { metaRepo.delete(f.name) }
-                    val newList = files.value.toMutableList().also { it.remove(f) }
-                    files.value = newList
-                    if (newList.isEmpty()) {
-                        onNavigateBack()
-                    } else if (currentIndex.value >= newList.size) {
-                        currentIndex.value = newList.lastIndex
+                    scope.launch {
+                        if (f != null) {
+                            try { f.delete() } catch (_: Exception) {}
+                            metaRepo.delete(f.name)
+                            val newList = files.value.toMutableList().also { it.remove(f) }
+                            files.value = newList
+                            if (newList.isEmpty()) {
+                                onNavigateBack()
+                            } else if (currentIndex.value >= newList.size) {
+                                currentIndex.value = newList.lastIndex
+                            }
+                        } else {
+                            metaRepo.delete(name)
+                            onNavigateBack()
+                        }
                     }
                 },
                 shape = RoundedCornerShape(12.dp),
