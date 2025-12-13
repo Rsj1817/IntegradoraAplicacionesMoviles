@@ -2,6 +2,8 @@
 
 # SnapRec: Gestión Inteligente de Audios
 
+<img src="./app/src/main/java/com/example/myapplication/ImgGit/Logo.png" alt="Logo de SnapRec" style="max-width:200px; height:auto; display:block; margin:12px 0;" />
+
 ## ✨ Descripción del Proyecto:
 SnapRec es una herramienta de productividad diseñada para capturar ideas al instante. Funciona como una grabadora de voz avanzada que no solo almacena el audio, sino que **transforma automáticamente la voz en texto**, permitiendo a los usuarios crear notas rápidas y precisas sin necesidad de escribir.
 
