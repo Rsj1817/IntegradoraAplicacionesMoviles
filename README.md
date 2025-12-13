@@ -51,12 +51,12 @@ Para una visión completa de la aplicación, aquí están las pantallas clave:
     <td colspan="3" style="height:20px;"></td>
   </tr>
   <tr>
-    <th colspan="3">Operación CRUD</th>
+    <th colspan="3">Gestión de notas</th>
   </tr>
   <tr>
     <td colspan="3" style="text-align:center;">
-      <img src="./app/src/main/java/com/example/myapplication/ImgGit/Operación%20CRUD.png" alt="Lista de grabaciones guardadas y categorizadas: Todas, Trabajo, Escuela" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
-      <p>Operación CRUD sobre las grabaciones</p>
+      <img src="./app/src/main/java/com/example/myapplication/ImgGit/GestionNotas.jpeg" alt="Pantalla de gestión de notas con transcripción y notas adicionales" style="max-width:300px; height:auto; border: 1px solid #ccc;" />
+      <p>Gestión de notas y transcripción</p>
     </td>
   </tr>
 </table>
